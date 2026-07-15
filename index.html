@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <title>Typemory · Wortschatz Apocalypse — German Vocabulary Typing Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0c0f0a">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Typemory">
 <style>
 :root{
   --bg:#0c0f0a; --panel:#141a10; --panel2:#1a2214; --line:#2c3820;
@@ -181,6 +189,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
     <div class="row" style="margin-top:22px;justify-content:space-between">
       <button class="primary" id="startbtn">▶ Survive</button>
       <div class="row">
+        <button id="installbtn" class="hidden">📲 Install app</button>
         <button id="statsbtn">📊 Progress</button>
         <button id="soundbtn">🔊 Sound on</button>
       </div>
@@ -206,6 +215,21 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
       <button class="primary" id="resumebtn">Resume</button>
       <button id="quitbtn">Give up</button>
     </div>
+  </div>
+</div>
+
+<!-- iOS INSTALL GUIDE -->
+<div id="iosguide" class="overlay hidden">
+  <div class="panel" style="max-width:440px">
+    <h1 style="font-size:24px">Install on iPhone 📲</h1>
+    <p class="help" style="font-size:15px;line-height:2.1;margin-top:12px">
+      1 · Tap the <b>Share</b> button <kbd>⬆</kbd> in Safari's toolbar<br>
+      2 · Scroll down, tap <b>"Add to Home Screen"</b><br>
+      3 · Tap <b>Add</b> — Typemory becomes an app that works offline 🧟
+    </p>
+    <p class="mini" style="margin-top:12px">⚠️ Opened from Facebook or Messenger? Their in-app browser
+      can't install apps — tap <b>···</b> and choose <b>Open in Safari</b> first.</p>
+    <div class="row" style="margin-top:18px"><button id="iosback">← Back</button></div>
   </div>
 </div>
 
@@ -2024,7 +2048,7 @@ function roundRect(x,y,w,h,r){ ctx.beginPath();
 
 /* ---------- screens ---------- */
 function show(id){ hideAll(); $(id).classList.remove("hidden"); }
-function hideAll(){ for (const id of ["menu","stats","pause","over"]) $(id).classList.add("hidden"); }
+function hideAll(){ for (const id of ["menu","stats","pause","over","iosguide"]) $(id).classList.add("hidden"); }
 
 function renderProfiles(){
   const box=$("profiles"); box.innerHTML="";
@@ -2061,6 +2085,8 @@ $("startbtn").onclick=()=>{
   if (!profile){ $("pname").focus(); $("pname").placeholder="← name first!"; return; }
   ac(); hideAll(); state="play";
   $("hud").style.display="flex"; $("typebar").style.display="flex";
+  if (IS_TOUCH && !IS_STANDALONE && document.documentElement.requestFullscreen)
+    document.documentElement.requestFullscreen().catch(()=>{});
   layoutKB(); newRun(); last=0; loop();
 };
 $("pausebtn").onclick=()=>{ if (state==="play"){ state="pause"; show("pause"); } };
@@ -2106,6 +2132,27 @@ function renderStats(){
   });
   $("statsbody").innerHTML = `<div class="cols">${cols.join("")}</div>`;
 }
+
+/* ---------- PWA: offline + install ---------- */
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+const IS_STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let deferredPrompt = null;
+addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); deferredPrompt = e;
+  if (!IS_STANDALONE) $("installbtn").classList.remove("hidden");
+});
+if (IS_IOS && !IS_STANDALONE) $("installbtn").classList.remove("hidden");
+$("installbtn").onclick = async () => {
+  if (deferredPrompt){
+    deferredPrompt.prompt();
+    const c = await deferredPrompt.userChoice;
+    if (c.outcome === "accepted") $("installbtn").classList.add("hidden");
+    deferredPrompt = null;
+  } else if (IS_IOS) show("iosguide");
+};
+$("iosback").onclick = () => show("menu");
 
 /* ---------- boot ---------- */
 $("na1").textContent=PACKS.A1.length; $("na2").textContent=PACKS.A2.length;

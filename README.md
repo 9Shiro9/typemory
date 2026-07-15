@@ -12,7 +12,11 @@ word packs are planned.
 Zombies carry German words into battle. Type the word — article included — to shoot
 them before they reach your barricade.
 
-**Play:** open `index.html` in a browser, or visit this repo's GitHub Pages URL.
+**Play:** https://9shiro9.github.io/typemory/ — or open `index.html` locally.
+
+**Install as an app (free, no store):** it's a PWA — after the first visit it works fully
+offline. On Android tap the **📲 Install app** button in the menu; on iPhone open in Safari →
+Share → **Add to Home Screen**.
 
 - **1,288 words** — Goethe A1 (636) + A2 (652) vocabulary with English meanings
 - **Copy mode** (word shown — learn spelling) and **Recall mode** (only the meaning
