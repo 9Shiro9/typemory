@@ -1,0 +1,14 @@
+{
+  "name": "typemory",
+  "version": "1.0.0",
+  "description": "Type it to remember it — vocabulary typing game for language learners",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^7",
+    "@capacitor/cli": "^7",
+    "@capacitor/core": "^7"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "appId": "com.typemory.app",
+  "appName": "Typemory",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0c0f0a"
+  }
+}

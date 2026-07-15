@@ -1,5 +1,14 @@
 # Copyrighted textbooks / personal learning materials — never commit
 learning-materials/
 
+# Capacitor / Android build output (generated in CI, never committed)
+node_modules/
+android/
+www/
+package-lock.json
+
+# signing material — lives in ~/Documents/typemory-signing, NEVER in the repo
+*.keystore
+
 # macOS
 .DS_Store
