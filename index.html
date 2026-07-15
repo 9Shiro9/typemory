@@ -164,6 +164,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
     <div class="row">
       <button class="chip on" id="packA1">A1 · <span id="na1"></span> words</button>
       <button class="chip" id="packA2">A2 · <span id="na2"></span> words</button>
+      <button class="chip" id="packBoth">A1 + A2</button>
     </div>
 
     <h2>Mode</h2>
@@ -2165,15 +2166,18 @@ function addProfile(){
 }
 $("paddbtn").onclick=addProfile;
 function syncMenu(){
-  $("packA1").classList.toggle("on",packsOn.A1);
-  $("packA2").classList.toggle("on",packsOn.A2);
+  $("packA1").classList.toggle("on", packsOn.A1 && !packsOn.A2);
+  $("packA2").classList.toggle("on", packsOn.A2 && !packsOn.A1);
+  $("packBoth").classList.toggle("on", packsOn.A1 && packsOn.A2);
   $("modeLearn").classList.toggle("on",mode==="learn");
   $("modeCopy").classList.toggle("on",mode==="copy");
   $("modeRecall").classList.toggle("on",mode==="recall");
   $("soundbtn").textContent = soundOn?"🔊 Sound on":"🔇 Sound off";
 }
-$("packA1").onclick=()=>{ packsOn.A1=!packsOn.A1; if(!packsOn.A1&&!packsOn.A2)packsOn.A2=true; syncMenu(); };
-$("packA2").onclick=()=>{ packsOn.A2=!packsOn.A2; if(!packsOn.A1&&!packsOn.A2)packsOn.A1=true; syncMenu(); };
+const setPacks=(a1,a2)=>{ packsOn.A1=a1; packsOn.A2=a2; syncMenu(); };
+$("packA1").onclick=()=>setPacks(true,false);
+$("packA2").onclick=()=>setPacks(false,true);
+$("packBoth").onclick=()=>setPacks(true,true);
 $("modeLearn").onclick=()=>{ mode="learn"; syncMenu(); };
 $("modeCopy").onclick=()=>{ mode="copy"; syncMenu(); };
 $("modeRecall").onclick=()=>{ mode="recall"; syncMenu(); };
