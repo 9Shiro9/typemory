@@ -18,6 +18,10 @@ them before they reach your barricade.
 offline. On Android tap the **📲 Install app** button in the menu; on iPhone open in Safari →
 Share → **Add to Home Screen**.
 
+**Android APK:** prefer a classic APK? Grab the latest from
+[Releases](https://github.com/9Shiro9/typemory/releases/latest) and sideload it
+(you may need to allow "install unknown apps"). Fully offline, ~3 MB.
+
 - **1,288 words** — Goethe A1 (636) + A2 (652) vocabulary with English meanings
 - **Copy mode** (word shown — learn spelling) and **Recall mode** (only the meaning
   shows — remember the German; 💡/Tab reveals a letter for a penalty)
