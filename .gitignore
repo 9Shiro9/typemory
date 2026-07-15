@@ -1,0 +1,5 @@
+# Copyrighted textbooks / personal learning materials — never commit
+learning-materials/
+
+# macOS
+.DS_Store

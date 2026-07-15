@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Typemory · Wortschatz Apocalypse — German Vocabulary Typing Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<style>
+:root{
+  --bg:#0c0f0a; --panel:#141a10; --panel2:#1a2214; --line:#2c3820;
+  --bone:#e8e6d9; --dim:#98a087; --green:#8ee04a; --green-dim:#4f7a2b;
+  --red:#e5484d; --amber:#ffc857; --blue:#6ab0ff; --pink:#ff7a9e;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Cascadia Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--bone);font-family:var(--sans);touch-action:manipulation}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(6,8,4,.82);backdrop-filter:blur(3px);z-index:20;overflow:auto;padding:24px}
+.hidden{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:28px 32px;max-width:720px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+h1{font:900 clamp(28px,5vw,44px)/1.05 var(--sans);text-transform:uppercase;letter-spacing:.04em;
+  color:var(--bone);text-shadow:0 0 18px rgba(229,72,77,.45),0 2px 0 #000}
+h1 .blut{color:var(--red)}
+.brand{font:800 12px var(--sans);letter-spacing:.34em;text-transform:uppercase;
+  color:var(--green);margin-bottom:8px}
+.brand span{color:var(--dim);letter-spacing:.1em;text-transform:none;font-weight:500}
+.sub{color:var(--dim);margin:6px 0 20px;font-size:14px}
+h2{font:800 13px var(--sans);text-transform:uppercase;letter-spacing:.14em;color:var(--dim);margin:20px 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:600 14px var(--sans);color:var(--bone);background:var(--panel2);
+  border:1px solid var(--line);border-radius:6px;padding:9px 16px;cursor:pointer}
+button:hover{border-color:var(--green);color:var(--green)}
+button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+button.primary{background:var(--green);border-color:var(--green);color:#0c0f0a;font-weight:800;
+  padding:12px 28px;font-size:16px}
+button.primary:hover{background:#a4f060;color:#0c0f0a}
+button.chip.on{border-color:var(--green);color:var(--green);background:rgba(142,224,74,.08)}
+input[type=text]{font:600 14px var(--sans);color:var(--bone);background:#0e120a;
+  border:1px solid var(--line);border-radius:6px;padding:9px 12px;width:180px}
+input[type=text]:focus{outline:none;border-color:var(--green)}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--dim);flex-wrap:wrap}
+.legend b{font-family:var(--mono)}
+.der{color:var(--blue)}.die{color:var(--pink)}.das{color:var(--amber)}
+.help{font-size:13px;color:var(--dim);line-height:1.7}
+.help kbd{font-family:var(--mono);background:#0e120a;border:1px solid var(--line);
+  border-radius:4px;padding:1px 6px;color:var(--bone);font-size:12px}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;display:none;justify-content:space-between;
+  align-items:center;padding:10px 16px;z-index:10;font-family:var(--mono);font-size:14px;
+  background:linear-gradient(rgba(6,8,4,.85),transparent);pointer-events:none}
+#hud .grp{display:flex;gap:18px;align-items:center}
+#hearts{color:var(--red);letter-spacing:2px;font-size:16px}
+#combo.hot{color:var(--amber)}
+#hud .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.1em}
+/* typing bar */
+#typebar{position:fixed;left:0;right:0;bottom:var(--kbh,0px);display:none;flex-direction:column;align-items:center;
+  gap:4px;padding:10px 12px 14px;z-index:10;pointer-events:none;
+  background:linear-gradient(transparent,rgba(6,8,4,.92) 40%)}
+#tword{font:700 clamp(20px,6vw,34px)/1 var(--mono);letter-spacing:.06em;min-height:34px}
+#tword .done{color:var(--green)}
+#tword .todo{color:var(--bone)}
+#tword .blank{color:var(--dim)}
+#tword.err{animation:shake .18s}
+#tmean{font:400 15px var(--sans);color:var(--dim)}
+#thint{font:400 11px var(--sans);color:#5a6350;text-transform:uppercase;letter-spacing:.1em}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#flash{position:fixed;inset:0;background:var(--red);opacity:0;pointer-events:none;z-index:15}
+/* on-screen keyboard */
+#kb{position:fixed;left:0;right:0;bottom:0;z-index:12;display:none;flex-direction:column;gap:5px;
+  padding:8px 5px calc(8px + env(safe-area-inset-bottom));background:rgba(10,13,8,.97);
+  border-top:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
+#kb .krow{display:flex;gap:4px;justify-content:center}
+#kb .key{flex:1;max-width:42px;padding:11px 0;font:600 15px var(--mono);background:var(--panel2);
+  border:1px solid var(--line);border-radius:6px;color:var(--bone);text-align:center;cursor:pointer}
+#kb .key:active{background:var(--green);color:#0c0f0a;border-color:var(--green)}
+#kb .key.umlaut{color:var(--amber)}
+#kb .key.space{max-width:none;flex:4}
+#kb .key.fn{max-width:64px;flex:1.6;color:var(--dim)}
+@media(max-width:640px){.panel{padding:20px 18px}.overlay{padding:12px}}
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.08em}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:#0e120a;border-radius:3px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--green)}
+.weakword{font-family:var(--mono);color:var(--bone)}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:12px 0}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.stat .v{font:800 22px var(--mono);color:var(--green)}
+.stat .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:640px){.cols{grid-template-columns:1fr}}
+.mini{font-size:12px;color:var(--dim)}
+@media(prefers-reduced-motion:reduce){#tword.err{animation:none}}
+</style>
+
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="flash"></div>
+
+<div id="hud">
+  <div class="grp">
+    <span id="hearts">♥♥♥♥♥</span>
+    <span><span class="lbl">Wave </span><span id="wave">1</span></span>
+    <span><span class="lbl">Score </span><span id="score">0</span></span>
+    <span id="combo"></span>
+  </div>
+  <div class="grp">
+    <span id="runinfo" class="lbl"></span>
+    <span class="lbl" id="newwords"></span>
+    <button id="pausebtn" style="pointer-events:auto;padding:3px 10px;font-size:13px">⏸</button>
+  </div>
+</div>
+
+<div id="typebar">
+  <div id="tword"></div>
+  <div id="tmean"></div>
+  <div id="thint"></div>
+</div>
+<div id="kb"></div>
+
+<!-- MENU -->
+<div id="menu" class="overlay">
+  <div class="panel">
+    <div class="brand">Typemory <span>· type it to remember it</span></div>
+    <h1>Wortschatz <span class="blut">Apocalypse</span> 🧟</h1>
+    <p class="sub">Campaign 1 — German A1+A2. Type the falling words to shoot the zombies
+      before they reach your barricade.</p>
+
+    <h2>Survivor</h2>
+    <div class="row" id="profiles"></div>
+    <div class="row" style="margin-top:8px">
+      <input type="text" id="pname" maxlength="14" placeholder="new survivor name">
+      <button id="paddbtn">Add</button>
+    </div>
+
+    <h2>Word pack</h2>
+    <div class="row">
+      <button class="chip on" id="packA1">A1 · <span id="na1"></span> words</button>
+      <button class="chip" id="packA2">A2 · <span id="na2"></span> words</button>
+    </div>
+
+    <h2>Mode</h2>
+    <div class="row">
+      <button class="chip on" id="modeCopy">Copy — word shown, type it</button>
+      <button class="chip" id="modeRecall">Recall — only the meaning shows</button>
+    </div>
+
+    <h2>Article colors — learn the gender by color</h2>
+    <div class="legend">
+      <span><b class="der">der</b> masculine</span>
+      <span><b class="die">die</b> feminine</span>
+      <span><b class="das">das</b> neuter</span>
+      <span style="margin-left:auto">nouns must be typed <i>with</i> their article</span>
+    </div>
+
+    <h2>Controls</h2>
+    <p class="help">
+      Zombies fall from the sky — just type and the lowest zombie whose word starts with
+      that letter gets targeted. On a phone, use the on-screen keys.
+      <kbd>ä ö ü ß</kbd> can be typed as <kbd>ae oe ue ss</kbd> ·
+      <kbd>Tab</kbd>/<kbd>💡</kbd> reveals a letter in Recall (costs points) ·
+      <kbd>Esc</kbd>/<kbd>⏸</kbd> pause · Mistakes make the zombie <i>faster</i>. Let 5 through and you're bitten.
+    </p>
+
+    <div class="row" style="margin-top:22px;justify-content:space-between">
+      <button class="primary" id="startbtn">▶ Survive</button>
+      <div class="row">
+        <button id="statsbtn">📊 Progress</button>
+        <button id="soundbtn">🔊 Sound on</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="stats" class="overlay hidden">
+  <div class="panel" style="max-width:860px">
+    <h1 style="font-size:26px">Survivor <span class="blut">Log</span></h1>
+    <div id="statsbody"></div>
+    <div class="row" style="margin-top:18px"><button id="statsback">← Back</button></div>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pause" class="overlay hidden">
+  <div class="panel" style="max-width:420px;text-align:center">
+    <h1 style="font-size:26px">Paused</h1>
+    <p class="sub">The horde waits for no one.</p>
+    <div class="row" style="justify-content:center">
+      <button class="primary" id="resumebtn">Resume</button>
+      <button id="quitbtn">Give up</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="over" class="overlay hidden">
+  <div class="panel" style="max-width:640px">
+    <h1 style="font-size:30px">You got <span class="blut">bitten</span> 🩸</h1>
+    <div class="statgrid" id="overstats"></div>
+    <div id="overweak"></div>
+    <div class="row" style="margin-top:18px">
+      <button class="primary" id="againbtn">↻ Try again</button>
+      <button id="menubtn">Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const VOCAB = [
+["die Ankunft","arrival"],
+["ab","from (a time/point)"],
+["aber","but"],
+["abfahren","to depart"],
+["die Abfahrt","departure"],
+["abgeben","to hand in"],
+["abholen","to pick up"],
+["der Absender","sender"],
+["Achtung","attention / caution"],
+["die Adresse","address"],
+["alle","all / everyone"],
+["allein","alone"],
+["also","so / therefore"],
+["alt","old"],
+["das Alter","age"],
+["an","at / on"],
+["das Angebot","offer"],
+["andere","other"],
+["anfangen","to begin"],
+["der Anfang","beginning"],
+["anklicken","to click on"],
+["ankommen","to arrive"],
+["ankreuzen","to tick / mark"],
+["anmachen","to turn on"],
+["anmelden","to register"],
+["die Anmeldung","registration"],
+["die Anrede","form of address"],
+["anrufen","to call (phone)"],
+["der Anruf","phone call"],
+["anbieten","to offer"],
+["die Ansage","announcement"],
+["der Anschluss","connection"],
+["antworten","to answer"],
+["die Antwort","answer"],
+["die Anzeige","advertisement"],
+["anziehen","to put on (clothes)"],
+["das Apartment","apartment"],
+["der Apfel","apple"],
+["der Appetit","appetite"],
+["arbeiten","to work"],
+["die Arbeit","work"],
+["arbeitslos","unemployed"],
+["der Arbeitsplatz","workplace"],
+["der Arm","arm"],
+["der Arzt","doctor"],
+["auch","also / too"],
+["auf","on / onto"],
+["die Aufgabe","task / exercise"],
+["aufhören","to stop"],
+["aufstehen","to get up"],
+["der Aufzug","elevator"],
+["das Auge","eye"],
+["aus","from / out of"],
+["der Ausflug","excursion / trip"],
+["ausfüllen","to fill out"],
+["der Ausgang","exit"],
+["die Auskunft","information (desk)"],
+["das Ausland","foreign country / abroad"],
+["der Ausländer","foreigner"],
+["ausländisch","foreign"],
+["ausmachen","to turn off"],
+["die Aussage","statement"],
+["aussehen","to look / appear"],
+["aussteigen","to get off / out"],
+["der Ausweis","ID card"],
+["ausziehen","to take off / move out"],
+["das Auto","car"],
+["die Autobahn","highway"],
+["der Automat","vending machine"],
+["automatisch","automatic"],
+["abfliegen","to fly off / depart (plane)"],
+["der Abflug","flight departure"],
+["das Baby","baby"],
+["die Bäckerei","bakery"],
+["das Bad","bathroom / bath"],
+["baden","to bathe"],
+["die Bahn","train / railway"],
+["der Bahnhof","train station"],
+["der Bahnsteig","platform"],
+["bald","soon"],
+["der Balkon","balcony"],
+["die Banane","banana"],
+["die Bank","bank / bench"],
+["bar","in cash"],
+["der Bauch","belly / stomach"],
+["der Baum","tree"],
+["der Beamte","civil servant"],
+["bedeuten","to mean"],
+["beginnen","to begin"],
+["bei","at / near / with"],
+["beide","both"],
+["das Bein","leg"],
+["das Beispiel","example"],
+["zum Beispiel","for example"],
+["bekannt","well-known"],
+["der Bekannte","acquaintance"],
+["bekommen","to get / receive"],
+["benutzen","to use"],
+["brauchen","to need"],
+["der Beruf","profession / job"],
+["breit","wide"],
+["besetzt","occupied / busy"],
+["der Brief","letter (mail)"],
+["besichtigen","to visit / sightsee"],
+["die Briefmarke","postage stamp"],
+["besser","better"],
+["bringen","to bring"],
+["beste","best"],
+["das Brot","bread"],
+["bestellen","to order"],
+["das Brötchen","bread roll"],
+["besuchen","to visit"],
+["der Bruder","brother"],
+["das Bett","bed"],
+["das Buch","book"],
+["bezahlen","to pay"],
+["der Buchstabe","letter (alphabet)"],
+["das Bier","beer"],
+["buchstabieren","to spell"],
+["das Bild","picture"],
+["der Bus","bus"],
+["billig","cheap"],
+["die Butter","butter"],
+["die Birne","pear"],
+["das Café","café"],
+["bis","until"],
+["die CD","CD"],
+["der Chef","boss"],
+["bisschen","a little bit"],
+["circa","approximately"],
+["bitte","please"],
+["die Bitte","request"],
+["der Computer","computer"],
+["bitten","to ask / request"],
+["bitter","bitter"],
+["da","there / since"],
+["die Dame","lady"],
+["der Bleistift","pencil"],
+["daneben","next to it"],
+["der Blick","view / glance"],
+["danken","to thank"],
+["die Blume","flower"],
+["der Dank","thanks"],
+["der Bogen","sheet / form"],
+["dann","then"],
+["böse","angry / evil"],
+["das Datum","date"],
+["dauern","to last / take (time)"],
+["der Eingang","entrance"],
+["denn","because / then"],
+["einkaufen","to shop"],
+["die Disco","disco"],
+["einladen","to invite"],
+["die Einladung","invitation"],
+["einmal","once"],
+["einsteigen","to get in / board"],
+["der Eintritt","admission / entry"],
+["das Einzelzimmer","single room"],
+["die Eltern","parents"],
+["die E-Mail","email"],
+["der Empfänger","recipient"],
+["empfehlen","to recommend"],
+["enden","to end"],
+["das Ende","end"],
+["der Doktor","doctor"],
+["das Doppelzimmer","double room"],
+["das Dorf","village"],
+["dort","there"],
+["draußen","outside"],
+["drucken","to print"],
+["der Drucker","printer"],
+["drücken","to push / press"],
+["durch","through"],
+["die Durchsage","announcement (PA)"],
+["dürfen","to be allowed to"],
+["der Durst","thirst"],
+["duschen","to shower"],
+["entschuldigen","to excuse"],
+["die Dusche","shower"],
+["die Entschuldigung","apology / excuse me"],
+["das Ergebnis","result"],
+["die Ecke","corner"],
+["erklären","to explain"],
+["die Ehefrau","wife"],
+["erlauben","to allow"],
+["der Erwachsene","adult"],
+["erzählen","to tell (a story)"],
+["essen","to eat"],
+["das Ei","egg"],
+["das Essen","food / meal"],
+["eilig","in a hurry"],
+["einfach","simple / easy"],
+["fahren","to drive / go"],
+["der Ehemann","husband"],
+["der Fahrer","driver"],
+["die Fahrkarte","ticket (transport)"],
+["das Fahrrad","bicycle"],
+["der Flughafen","airport"],
+["falsch","wrong / false"],
+["das Flugzeug","airplane"],
+["die Familie","family"],
+["das Formular","form (document)"],
+["der Familienname","family name"],
+["das Foto","photo"],
+["der Familienstand","marital status"],
+["fragen","to ask"],
+["die Farbe","color"],
+["die Frage","question"],
+["das Fax","fax"],
+["die Frau","woman / wife / Mrs."],
+["die Feier","celebration"],
+["frei","free"],
+["feiern","to celebrate"],
+["die Freizeit","free time"],
+["fehlen","to be missing"],
+["fremd","foreign / strange"],
+["der Fehler","mistake"],
+["freuen","to be glad"],
+["fernsehen","to watch TV"],
+["der Freund","friend / boyfriend"],
+["fertig","finished / ready"],
+["früher","earlier / in the past"],
+["das Feuer","fire"],
+["frühstücken","to have breakfast"],
+["das Fieber","fever"],
+["das Frühstück","breakfast"],
+["der Film","film / movie"],
+["die Führung","guided tour"],
+["finden","to find"],
+["der Fuß","foot"],
+["der Fußball","football / soccer"],
+["die Firma","company"],
+["der Fisch","fish"],
+["der Garten","garden"],
+["die Flasche","bottle"],
+["der Gast","guest"],
+["das Fleisch","meat"],
+["geben","to give"],
+["fliegen","to fly"],
+["geboren","born"],
+["das Geburtsjahr","year of birth"],
+["der Geburtsort","place of birth"],
+["das Glück","luck / happiness"],
+["der Geburtstag","birthday"],
+["glücklich","happy"],
+["gefallen","to please / be liked"],
+["gegen","against"],
+["gehen","to go / walk"],
+["Grad","degree (temperature)"],
+["gehören","to belong to"],
+["gratulieren","to congratulate"],
+["das Geld","money"],
+["grillen","to barbecue / grill"],
+["groß","big / tall"],
+["die Größe","size"],
+["die Großeltern","grandparents"],
+["die Großmutter","grandmother"],
+["der Großvater","grandfather"],
+["die Gruppe","group"],
+["der Gruß","greeting"],
+["das Gemüse","vegetables"],
+["das Gepäck","luggage"],
+["gerade","just now / straight"],
+["geradeaus","straight ahead"],
+["gerne","gladly / with pleasure"],
+["der Glückwunsch","congratulations"],
+["das Geschäft","shop / business"],
+["das Geschenk","present / gift"],
+["die Geschwister","siblings"],
+["gültig","valid"],
+["das Gespräch","conversation"],
+["günstig","cheap / favorable"],
+["gestern","yesterday"],
+["gut","good"],
+["gestorben","deceased"],
+["das Getränk","drink / beverage"],
+["das Haar","hair"],
+["das Gewicht","weight"],
+["haben","to have"],
+["gewinnen","to win"],
+["das Hähnchen","chicken (food)"],
+["das Glas","glass"],
+["die Halle","hall"],
+["glauben","to believe"],
+["halten","to hold / stop"],
+["gleich","right away / same"],
+["die Haltestelle","(bus) stop"],
+["das Gleis","track / platform"],
+["die Hand","hand"],
+["das Handy","mobile phone"],
+["das Haus","house"],
+["immer","always"],
+["die Hausaufgabe","homework"],
+["in","in"],
+["die Hausfrau","housewife"],
+["die Information","information"],
+["der Hausmann","househusband"],
+["international","international"],
+["das Internet","internet"],
+["die Heimat","home country / homeland"],
+["heiraten","to marry"],
+["die Jacke","jacket"],
+["jeder","every / each"],
+["heißen","to be called"],
+["jetzt","now"],
+["der Job","job"],
+["helfen","to help"],
+["der Jugendliche","teenager / youth"],
+["hell","bright / light"],
+["der Herd","stove"],
+["jung","young"],
+["der Junge","boy"],
+["herzlich","warm / cordial"],
+["kaputt","broken"],
+["heute","today"],
+["die Karte","card / map"],
+["hier","here"],
+["die Hilfe","help"],
+["die Kartoffel","potato"],
+["hinten","at the back"],
+["die Kasse","checkout / cash desk"],
+["das Hobby","hobby"],
+["kaufen","to buy"],
+["hoch","high"],
+["kennen","to know (someone)"],
+["die Hochzeit","wedding"],
+["kennenlernen","to get to know"],
+["holen","to fetch / get"],
+["das Kind","child"],
+["hören","to hear / listen"],
+["der Kindergarten","kindergarten"],
+["das Hotel","hotel"],
+["das Kino","cinema"],
+["der Hund","dog"],
+["der Kiosk","kiosk"],
+["der Hunger","hunger"],
+["klar","clear / of course"],
+["die Kreditkarte","credit card"],
+["die Klasse","class"],
+["lang","long"],
+["die Kleidung","clothing"],
+["langsam","slow"],
+["klein","small"],
+["laufen","to run / walk"],
+["kochen","to cook"],
+["laut","loud"],
+["der Koffer","suitcase"],
+["leben","to live"],
+["der Kollege","colleague"],
+["das Leben","life"],
+["kommen","to come"],
+["die Lebensmittel","groceries"],
+["können","can / to be able to"],
+["ledig","single / unmarried"],
+["das Konto","bank account"],
+["legen","to lay / put"],
+["der Kopf","head"],
+["der Lehrer","teacher"],
+["kosten","to cost"],
+["leicht","easy / light"],
+["krank","sick / ill"],
+["leider","unfortunately"],
+["kriegen","to get"],
+["leise","quiet / soft"],
+["die Küche","kitchen"],
+["lernen","to learn"],
+["der Kuchen","cake"],
+["lesen","to read"],
+["der Kugelschreiber","ballpoint pen"],
+["letzte","last"],
+["der Kühlschrank","fridge"],
+["die Leute","people"],
+["kulturell","cultural"],
+["das Licht","light"],
+["sich kümmern","to take care of"],
+["lieben","to love"],
+["der Kunde","customer"],
+["lieber","rather / preferably"],
+["der Kurs","course"],
+["Lieblings-","favorite (prefix)"],
+["kurz","short"],
+["das Lied","song"],
+["liegen","to lie / be located"],
+["lachen","to laugh"],
+["links","left"],
+["der Laden","shop / store"],
+["der Lkw","truck"],
+["das Lokal","pub / restaurant"],
+["das Land","country"],
+["die Lösung","solution"],
+["möglich","possible"],
+["lustig","funny"],
+["der Moment","moment"],
+["morgen","tomorrow"],
+["müde","tired"],
+["der Mund","mouth"],
+["müssen","must / to have to"],
+["die Mutter","mother"],
+["machen","to make / do"],
+["das Mädchen","girl"],
+["man","one / you (in general)"],
+["der Mann","man / husband"],
+["männlich","male"],
+["die Maschine","machine"],
+["nach","after / to (a place)"],
+["das Meer","sea"],
+["nächste","next"],
+["der Name","name"],
+["nehmen","to take"],
+["neu","new"],
+["mehr","more"],
+["meiste","most"],
+["der Mensch","human / person"],
+["nicht","not"],
+["mieten","to rent"],
+["nichts","nothing"],
+["die Miete","rent"],
+["nie","never"],
+["noch","still / yet"],
+["normal","normal"],
+["die Nummer","number"],
+["nur","only"],
+["oben","above / upstairs"],
+["die Milch","milk"],
+["mit","with"],
+["mitbringen","to bring along"],
+["mitkommen","to come along"],
+["mitmachen","to join in"],
+["das Obst","fruit"],
+["mitnehmen","to take along"],
+["oder","or"],
+["die Mitte","middle"],
+["öffnen","to open"],
+["die Möbel","furniture"],
+["oft","often"],
+["ohne","without"],
+["möchten","would like"],
+["mögen","to like"],
+["das Öl","oil"],
+["die Oma","grandma"],
+["der Opa","grandpa"],
+["der Raum","room / space"],
+["die Ordnung","order / tidiness"],
+["die Rechnung","bill / invoice"],
+["der Ort","place"],
+["rechts","right"],
+["regnen","to rain"],
+["der Regen","rain"],
+["der Reis","rice"],
+["reisen","to travel"],
+["die Reise","journey / trip"],
+["das Reisebüro","travel agency"],
+["der Reiseführer","travel guide"],
+["das Papier","paper"],
+["die Papiere","documents / papers"],
+["der Partner","partner"],
+["die Partnerin","partner (female)"],
+["die Party","party"],
+["der Pass","passport"],
+["die Pause","break / pause"],
+["der Plan","plan"],
+["der Platz","place / seat / square"],
+["reparieren","to repair"],
+["die Polizei","police"],
+["die Reparatur","repair"],
+["die Pommes","fries"],
+["das Restaurant","restaurant"],
+["die Post","post office / mail"],
+["die Rezeption","reception"],
+["die Postleitzahl","postal code"],
+["richtig","correct / right"],
+["das Praktikum","internship"],
+["riechen","to smell"],
+["die Praxis","doctor's office / practice"],
+["ruhig","quiet / calm"],
+["der Preis","price"],
+["das Problem","problem"],
+["der Prospekt","brochure"],
+["die Prüfung","exam"],
+["pünktlich","punctual / on time"],
+["der Saft","juice"],
+["sagen","to say"],
+["der Salat","salad"],
+["das Salz","salt"],
+["die S-Bahn","city train"],
+["der Schalter","counter / switch"],
+["scheinen","to shine / seem"],
+["rauchen","to smoke"],
+["schicken","to send"],
+["sein","to be"],
+["das Schild","sign"],
+["der Schinken","ham"],
+["zu","to / too (much)"],
+["schlafen","to sleep"],
+["seit","since"],
+["selbstständig","self-employed"],
+["sitzen","to sit"],
+["das Sofa","sofa"],
+["sofort","immediately"],
+["schlecht","bad"],
+["schließen","to close"],
+["geschlossen","closed"],
+["der Schluss","end / conclusion"],
+["der Schlüssel","key"],
+["der Sohn","son"],
+["schmecken","to taste (good)"],
+["sollen","should / to be supposed to"],
+["schnell","fast"],
+["die Sonne","sun"],
+["schon","already"],
+["spät","late"],
+["schön","beautiful / nice"],
+["später","later"],
+["die Speisekarte","menu"],
+["spielen","to play"],
+["der Schrank","cupboard / wardrobe"],
+["schreiben","to write"],
+["der Sport","sport"],
+["der Schuh","shoe"],
+["die Sprache","language"],
+["die Schule","school"],
+["sprechen","to speak"],
+["der Schüler","pupil / student"],
+["die Stadt","city"],
+["schwer","heavy / difficult"],
+["stehen","to stand"],
+["die Schwester","sister"],
+["die Stelle","position / job"],
+["schwimmen","to swim"],
+["stellen","to put / place"],
+["das Schwimmbad","swimming pool"],
+["der Stock","floor / story"],
+["der See","lake"],
+["sehen","to see"],
+["die Sehenswürdigkeit","sight / attraction"],
+["sehr","very"],
+["die Straße","street"],
+["die Straßenbahn","tram"],
+["studieren","to study (university)"],
+["das Studium","(university) studies"],
+["tschüss","bye"],
+["der Student","university student"],
+["tun","to do"],
+["die Stunde","hour / lesson"],
+["suchen","to search / look for"],
+["übernachten","to stay overnight"],
+["überweisen","to transfer (money)"],
+["tanzen","to dance"],
+["die Uhr","clock / watch / o'clock"],
+["die Tasche","bag"],
+["um","at (time) / around"],
+["das Taxi","taxi"],
+["umziehen","to move (house)"],
+["der Tee","tea"],
+["und","and"],
+["der Teil","part"],
+["unten","below / downstairs"],
+["telefonieren","to phone"],
+["unter","under"],
+["das Telefon","telephone"],
+["der Unterricht","lesson / class"],
+["der Termin","appointment"],
+["unterschreiben","to sign"],
+["der Test","test"],
+["die Unterschrift","signature"],
+["teuer","expensive"],
+["der Urlaub","vacation"],
+["der Text","text"],
+["das Thema","topic"],
+["der Vater","father"],
+["das Ticket","ticket"],
+["verboten","forbidden"],
+["der Tisch","table"],
+["verdienen","to earn"],
+["die Tochter","daughter"],
+["der Verein","club / association"],
+["die Toilette","toilet"],
+["verheiratet","married"],
+["die Tomate","tomato"],
+["verkaufen","to sell"],
+["tot","dead"],
+["der Verkäufer","salesperson"],
+["treffen","to meet"],
+["vermieten","to rent out"],
+["die Treppe","stairs"],
+["der Vermieter","landlord"],
+["trinken","to drink"],
+["verstehen","to understand"],
+["der Verwandte","relative"],
+["viel","much / a lot"],
+["vielleicht","maybe"],
+["von","from / of"],
+["das Wiedersehen","goodbye / reunion"],
+["wie viel","how much"],
+["willkommen","welcome"],
+["der Wind","wind"],
+["vor","in front of / before"],
+["wissen","to know (facts)"],
+["der Vorname","first name"],
+["die Vorsicht","caution"],
+["wohnen","to live / reside"],
+["vorstellen","to introduce"],
+["die Wohnung","apartment / flat"],
+["wollen","to want"],
+["das Wort","word"],
+["wunderbar","wonderful"],
+["wandern","to hike"],
+["warten","to wait"],
+["was für ein","what kind of"],
+["waschen","to wash"],
+["das Wasser","water"],
+["weh tun","to hurt"],
+["weiblich","female"],
+["der Wein","wine"],
+["weit","far"],
+["weiter","further / continue"],
+["welcher","which"],
+["die Welt","world"],
+["wenig","little / few"],
+["zahlen","to pay"],
+["die Zeit","time"],
+["zurzeit","currently"],
+["die Zeitung","newspaper"],
+["die Zigarette","cigarette"],
+["das Zimmer","room"],
+["der Zoll","customs"],
+["zufrieden","satisfied"],
+["der Zug","train"],
+["werden","to become"],
+["zurück","back"],
+["das Wetter","weather"],
+["zusammen","together"],
+["wichtig","important"],
+["zwischen","between"],
+["wiederholen","to repeat"],
+["das Wiederhören","goodbye (on the phone)"]
+];
+
+const VOCAB_A2 = [
+["die Angst","fear"],
+["abschließen","to lock"],
+["die Ahnung","idea / clue"],
+["aktiv","active"],
+["aktuell","current / up to date"],
+["als","as / when / than"],
+["die Ampel","traffic light"],
+["ansehen","to look at"],
+["ändern","to change"],
+["anders","different(ly)"],
+["der Anzug","suit"],
+["die Apotheke","pharmacy"],
+["der Apparat","device / apparatus"],
+["sich ärgern","to be annoyed"],
+["der Artikel","article"],
+["auspacken","to unpack"],
+["sich ausruhen","to rest"],
+["aufräumen","to tidy up"],
+["außer","except for"],
+["außerdem","besides / in addition"],
+["außerhalb","outside of"],
+["aussprechen","to pronounce"],
+["aufregend","exciting"],
+["aufpassen","to pay attention"],
+["aufmachen","to open"],
+["die Ausbildung","vocational training"],
+["die Ausstellung","exhibition"],
+["austragen","to deliver (newspapers)"],
+["ausgeben","to spend (money)"],
+["ausgehen","to go out"],
+["beantworten","to answer (a question)"],
+["der Babysitter","babysitter"],
+["sich bedanken","to say thank you"],
+["sich beeilen","to hurry"],
+["beenden","to finish / end"],
+["die Band","band"],
+["begründen","to give reasons"],
+["der Basketball","basketball"],
+["basteln","to do crafts"],
+["bauen","to build"],
+["beliebt","popular"],
+["bequem","comfortable"],
+["die Baustelle","construction site"],
+["beraten","to advise"],
+["der Berg","mountain"],
+["berichten","to report"],
+["sich bewerben","to apply (for a job)"],
+["die Bewerbung","job application"],
+["berühmt","famous"],
+["bewölkt","cloudy"],
+["der Bescheid","notice (Bescheid sagen: to inform)"],
+["die Wolke","cloud"],
+["beschreiben","to describe"],
+["sich beschweren","to complain"],
+["besonders","especially"],
+["bestätigen","to confirm"],
+["bestehen","to pass (an exam)"],
+["die Bibliothek","library"],
+["das Blatt","sheet / leaf"],
+["bleiben","to stay"],
+["der Besuch","visit"],
+["blöd","stupid / dumb"],
+["der Blog","blog"],
+["blond","blond"],
+["bunt","colorful"],
+["das Büro","office"],
+["die Bluse","blouse"],
+["die Bohne","bean"],
+["braten","to fry / roast"],
+["die Cafeteria","cafeteria"],
+["chatten","to chat (online)"],
+["die Chefin","boss (female)"],
+["die Brille","glasses"],
+["der Club","club"],
+["der Comic","comic"],
+["die Creme","cream / lotion"],
+["die Brücke","bridge"],
+["buchen","to book"],
+["dabei sein","to be there / take part"],
+["dafür","for it / in favor"],
+["dagegen","against it"],
+["damals","back then"],
+["drüben","over there"],
+["danke","thank you"],
+["dass","that (conjunction)"],
+["die Datei","file (computer)"],
+["dumm","stupid"],
+["denken","to think"],
+["dunkel","dark"],
+["dünn","thin"],
+["deshalb","therefore / that's why"],
+["deutlich","clear(ly)"],
+["dick","fat / thick"],
+["das Ding","thing"],
+["direkt","direct(ly)"],
+["diskutieren","to discuss"],
+["doch","yes it is / though"],
+["das E-Book","e-book"],
+["egal","doesn't matter"],
+["dringend","urgent"],
+["drinnen","inside"],
+["der Ehepartner","spouse"],
+["eigen","own"],
+["eigentlich","actually"],
+["das Eis","ice cream / ice"],
+["einige","some / a few"],
+["endlich","finally"],
+["das Einkaufszentrum","shopping mall"],
+["einpacken","to pack / wrap"],
+["das Erdgeschoss","ground floor"],
+["die Erfahrung","experience"],
+["sich erinnern","to remember"],
+["erkältet sein","to have a cold"],
+["sich eintragen","to sign up / register"],
+["einverstanden sein","to agree"],
+["erlaubt","allowed"],
+["die Erlaubnis","permission"],
+["die Ermäßigung","discount"],
+["einziehen","to move in"],
+["erreichen","to reach"],
+["erst","only / not until / first"],
+["fast","almost"],
+["faul","lazy"],
+["der Feierabend","end of the workday"],
+["das Fenster","window"],
+["die Ferien","school holidays"],
+["das Fach","subject (school)"],
+["der Fernseher","TV set"],
+["das Fest","festival / celebration"],
+["das Festival","festival"],
+["fett","fatty / fat"],
+["der Fahrplan","timetable"],
+["fallen","to fall"],
+["der Fan","fan"],
+["fantastisch","fantastic"],
+["fit sein","to be fit"],
+["die Freundin","friend (female) / girlfriend"],
+["freundlich","friendly"],
+["fleißig","hard-working"],
+["frisch","fresh"],
+["froh","glad"],
+["der Flohmarkt","flea market"],
+["der Flug","flight"],
+["der Fluss","river"],
+["der Fotoapparat","camera"],
+["sich fühlen","to feel"],
+["fotografieren","to photograph"],
+["früh","early"],
+["der Führerschein","driver's license"],
+["die Fundsachen","lost property"],
+["furchtbar","terrible"],
+["freiwillig","voluntary"],
+["der Freiwillige","volunteer"],
+["die Gabel","fork"],
+["ganz","whole / quite"],
+["die Garage","garage"],
+["die Geschichte","history / story"],
+["das Geschirr","dishes"],
+["das Gesicht","face"],
+["gefährlich","dangerous"],
+["das Gegenteil","opposite"],
+["gegenüber","opposite / across from"],
+["gesund","healthy"],
+["das Gehalt","salary"],
+["die Gesundheit","health"],
+["die Geldbörse","wallet / purse"],
+["genau","exact(ly)"],
+["das Gewitter","thunderstorm"],
+["die Gitarre","guitar"],
+["genug","enough"],
+["das Gerät","device"],
+["das Gericht","dish (food) / court"],
+["die Grippe","flu"],
+["hallo","hello"],
+["das Heft","notebook / exercise book"],
+["heiß","hot"],
+["die Heizung","heating"],
+["der Hals","neck / throat"],
+["das Hemd","shirt"],
+["der Hamburger","hamburger"],
+["der Herr","Mr. / gentleman"],
+["das Handtuch","towel"],
+["herstellen","to produce"],
+["hängen","to hang"],
+["herunterladen","to download"],
+["hart","hard"],
+["hässlich","ugly"],
+["die Hauptstadt","capital city"],
+["der Haushalt","household"],
+["der Himmel","sky"],
+["das Instrument","instrument"],
+["hinter","behind"],
+["intelligent","intelligent"],
+["das Interesse","interest"],
+["sich interessieren","to be interested in"],
+["hoffen","to hope"],
+["interessant","interesting"],
+["das Interview","interview"],
+["die Homepage","homepage"],
+["ja","yes"],
+["die Hose","trousers / pants"],
+["husten","to cough"],
+["die Jeans","jeans"],
+["jemand","someone"],
+["joggen","to jog"],
+["die Idee","idea"],
+["der Kaffee","coffee"],
+["die Insel","island"],
+["der Kalender","calendar"],
+["die Kirche","church"],
+["kalt","cold"],
+["klappen","to work out (go well)"],
+["die Kamera","camera"],
+["das Klavier","piano"],
+["das Kleid","dress"],
+["der Käse","cheese"],
+["die Katze","cat"],
+["klug","smart / clever"],
+["das Kaufhaus","department store"],
+["kein","no / none"],
+["der Keller","basement / cellar"],
+["die Kollegin","colleague (female)"],
+["komisch","funny / strange"],
+["die Kenntnisse","knowledge / skills"],
+["die Kette","necklace / chain"],
+["der Kontakt","contact"],
+["kontrollieren","to check / inspect"],
+["das Konzert","concert"],
+["kündigen","to quit / cancel (a contract)"],
+["der Körper","body"],
+["die Kosmetik","cosmetics"],
+["die Kunst","art"],
+["kostenlos","free of charge"],
+["das Krankenhaus","hospital"],
+["die Krankenkasse","health insurance"],
+["die Krankheit","illness"],
+["der Kredit","loan / credit"],
+["die Kreuzung","intersection / crossroads"],
+["die Lampe","lamp"],
+["die Landschaft","landscape"],
+["lange","for a long time"],
+["der Krimi","crime story / thriller"],
+["langweilig","boring"],
+["der Laptop","laptop"],
+["kühl","cool"],
+["lassen","to let / leave"],
+["die Kultur","culture"],
+["die Kundin","customer (female)"],
+["leer","empty"],
+["der Link","link"],
+["der Löffel","spoon"],
+["die Lüge","lie (untruth)"],
+["lügen","to lie (tell untruth)"],
+["leidtun","to be sorry"],
+["leihen","to lend / borrow"],
+["die Lust","desire (Lust haben: to feel like)"],
+["der Magen","stomach"],
+["die Mailbox","voicemail"],
+["das Mal","time (occasion)"],
+["malen","to paint"],
+["lieb","dear / kind"],
+["die Mannschaft","team (sports)"],
+["der Mantel","coat"],
+["der Markt","market"],
+["manchmal","sometimes"],
+["manche","some"],
+["liefern","to deliver"],
+["das Medikament","medicine"],
+["das Mittel","means / remedy"],
+["das Mobiltelefon","mobile phone"],
+["meinen","to think / mean"],
+["die Meinung","opinion"],
+["die Mode","fashion"],
+["modern","modern"],
+["meistens","mostly / usually"],
+["die Menge","amount / crowd"],
+["merken","to notice"],
+["die Messe","trade fair"],
+["der Motor","engine"],
+["das Messer","knife"],
+["der Motorroller","scooter"],
+["der Müll","garbage / trash"],
+["das Museum","museum"],
+["die Musik","music"],
+["mindestens","at least"],
+["die Mütze","cap / beanie"],
+["der Mitarbeiter","employee / co-worker"],
+["das Mittagessen","lunch"],
+["der Nachbar","neighbor"],
+["die Nachbarin","neighbor (female)"],
+["die Nachricht","message / news"],
+["die Note","grade / mark"],
+["die Nähe","vicinity (in der Nähe: nearby)"],
+["notieren","to note down"],
+["nass","wet"],
+["die Notiz","note"],
+["die Natur","nature"],
+["notwendig","necessary"],
+["natürlich","of course / natural"],
+["die Nudel","noodle / pasta"],
+["neben","next to"],
+["nebenan","next door"],
+["neblig","foggy"],
+["nützlich","useful"],
+["nein","no"],
+["nennen","to name / call"],
+["offen","open"],
+["nervös","nervous"],
+["nett","nice / kind"],
+["das Ohr","ear"],
+["online","online"],
+["niemand","nobody"],
+["die Orange","orange"],
+["nirgends","nowhere"],
+["organisieren","to organize"],
+["das Paar","couple / pair"],
+["ein paar","a few"],
+["packen","to pack"],
+["das Pferd","horse"],
+["die Pflanze","plant"],
+["die Pizza","pizza"],
+["das Plakat","poster / placard"],
+["planen","to plan"],
+["das Paket","parcel / package"],
+["das Parfüm","perfume"],
+["der Park","park"],
+["parken","to park"],
+["plötzlich","suddenly"],
+["die Portion","portion"],
+["das Poster","poster"],
+["die Postkarte","postcard"],
+["praktisch","practical"],
+["passen","to fit"],
+["preiswert","inexpensive / good value"],
+["privat","private"],
+["pro","per"],
+["probieren","to try / taste"],
+["passieren","to happen"],
+["das Passwort","password"],
+["recht haben","to be right"],
+["das Programm","program"],
+["das Projekt","project"],
+["reden","to talk"],
+["prüfen","to check / test"],
+["der Pullover","sweater"],
+["putzen","to clean"],
+["reich","rich"],
+["der Reifen","tire"],
+["die Reihe","row / series"],
+["die Reinigung","dry cleaner's"],
+["die Qualität","quality"],
+["das Quiz","quiz"],
+["das Radio","radio"],
+["raten","to guess / advise"],
+["reiten","to ride (a horse)"],
+["das Rathaus","town hall"],
+["das Rätsel","puzzle / riddle"],
+["renovieren","to renovate"],
+["der Rentner","pensioner / retiree"],
+["rechnen","to calculate"],
+["reservieren","to reserve"],
+["der Rest","rest / remainder"],
+["das Rezept","recipe / prescription"],
+["der Satz","sentence"],
+["sauber","clean"],
+["sauer","sour / annoyed"],
+["schade","a pity / shame"],
+["schädlich","harmful"],
+["schaffen","to manage / accomplish"],
+["sammeln","to collect"],
+["das Rind","beef / cattle"],
+["der Ring","ring"],
+["der Rock","skirt"],
+["romantisch","romantic"],
+["die Rose","rose"],
+["der Rücken","back (body)"],
+["scharf","spicy / sharp"],
+["der Rucksack","backpack"],
+["rufen","to call / shout"],
+["schenken","to give (as a gift)"],
+["die Ruhe","quiet / calm"],
+["die Schere","scissors"],
+["rund","round"],
+["der Rundgang","tour / walkaround"],
+["die Sache","thing / matter"],
+["das Schiff","ship"],
+["schimpfen","to scold / complain"],
+["schrecklich","terrible"],
+["der Schirm","umbrella"],
+["das Schlafzimmer","bedroom"],
+["schlimm","bad / serious"],
+["das Schloss","castle / lock"],
+["schriftlich","in writing"],
+["schwach","weak"],
+["schwanger","pregnant"],
+["das Schwein","pig / pork"],
+["schwierig","difficult"],
+["der Schmerz","pain"],
+["schmutzig","dirty"],
+["der Schnee","snow"],
+["sich schneiden","to cut oneself"],
+["die See","sea"],
+["schneien","to snow"],
+["die Schokolade","chocolate"],
+["die Seife","soap"],
+["an sein","to be on"],
+["aus sein","to be off"],
+["auf sein","to be open"],
+["weg sein","to be gone"],
+["zu sein","to be closed"],
+["sonnig","sunny"],
+["sonst","otherwise"],
+["spannend","exciting / thrilling"],
+["sparen","to save (money)"],
+["der Spaß","fun"],
+["die Seite","page / side"],
+["selbst","self / even"],
+["die Sendung","TV program / broadcast"],
+["spazieren gehen","to go for a walk"],
+["der Spaziergang","walk / stroll"],
+["sich setzen","to sit down"],
+["sicher","safe / sure"],
+["speichern","to save (a file)"],
+["singen","to sing"],
+["die Situation","situation"],
+["das Spiel","game"],
+["der Ski","ski"],
+["sportlich","sporty / athletic"],
+["der Sportplatz","sports field"],
+["sogar","even"],
+["die Sprechstunde","office hours / consultation"],
+["streng","strict"],
+["der Stress","stress"],
+["der Stadtplan","city map"],
+["stressig","stressful"],
+["der Star","star (celebrity)"],
+["das Stück","piece"],
+["stark","strong"],
+["stattfinden","to take place"],
+["sterben","to die"],
+["der Stuhl","chair"],
+["der Stiefel","boot"],
+["super","great / super"],
+["der Supermarkt","supermarket"],
+["die Suppe","soup"],
+["surfen","to surf"],
+["der Stift","pen"],
+["das Stipendium","scholarship"],
+["das Stockwerk","floor / story"],
+["stören","to disturb"],
+["der Strand","beach"],
+["süß","sweet / cute"],
+["die Süßigkeiten","sweets / candy"],
+["sympathisch","likeable"],
+["sich streiten","to argue"],
+["das Tablet","tablet"],
+["die Tafel","(black)board"],
+["das Taschengeld","pocket money"],
+["die Tasse","cup"],
+["tauschen","to swap / exchange"],
+["das Team","team"],
+["das Tier","animal"],
+["der Tipp","tip / hint"],
+["der Titel","title"],
+["toll","great"],
+["der Topf","pot"],
+["die Torte","cake / gateau"],
+["total","totally"],
+["die Tour","tour"],
+["der Tourist","tourist"],
+["teilen","to share / divide"],
+["teilnehmen","to take part"],
+["tief","deep"],
+["tragen","to carry / wear"],
+["trainieren","to train / work out"],
+["der Teller","plate"],
+["das Tennis","tennis"],
+["das Training","training"],
+["der Traum","dream"],
+["das Theater","theater"],
+["träumen","to dream"],
+["traurig","sad"],
+["umsteigen","to change (trains)"],
+["trocken","dry"],
+["das T-Shirt","T-shirt"],
+["die Tür","door"],
+["typisch","typical"],
+["der Umzug","move (house) / parade"],
+["unbedingt","absolutely / definitely"],
+["der Unfall","accident"],
+["die Universität","university"],
+["sich unterhalten","to chat / converse"],
+["üben","to practice"],
+["über","over / about"],
+["überall","everywhere"],
+["die Unterkunft","accommodation"],
+["übermorgen","the day after tomorrow"],
+["unternehmen","to do / undertake (an activity)"],
+["der Unterschied","difference"],
+["übersetzen","to translate"],
+["untersuchen","to examine"],
+["verlieren","to lose"],
+["verabredet sein","to have an appointment / date"],
+["verbieten","to forbid"],
+["verpassen","to miss (a train, a chance)"],
+["verreisen","to go on a trip"],
+["verschieben","to postpone"],
+["verschieden","different / various"],
+["vereinbaren","to arrange / agree on"],
+["die Verspätung","delay"],
+["vergessen","to forget"],
+["versuchen","to try"],
+["vergleichen","to compare"],
+["der Verkehr","traffic"],
+["das Verkehrsmittel","means of transport"],
+["sich verletzen","to injure oneself"],
+["der Vertrag","contract"],
+["der Vogel","bird"],
+["voll","full"],
+["der Volleyball","volleyball"],
+["sich verlieben","to fall in love"],
+["vorbei","over / past"],
+["die Wäsche","laundry"],
+["vorbereiten","to prepare"],
+["vorgestern","the day before yesterday"],
+["vorher","before / previously"],
+["die Webseite","website"],
+["vorne","at the front"],
+["wechseln","to change / exchange"],
+["der Vorschlag","suggestion"],
+["wecken","to wake (someone) up"],
+["vorsichtig","careful"],
+["weg","away / gone"],
+["wegfahren","to drive away"],
+["vorwärts","forward"],
+["weggehen","to go away / leave"],
+["wach","awake"],
+["der Wagen","car / wagon"],
+["weglaufen","to run away"],
+["wählen","to choose / dial / vote"],
+["wegnehmen","to take away"],
+["wegwerfen","to throw away"],
+["wahr","true"],
+["der Weg","way / path"],
+["wahrscheinlich","probably"],
+["wegen","because of"],
+["der Wald","forest"],
+["warm","warm"],
+["weich","soft"],
+["weil","because"],
+["warum","why"],
+["was","what"],
+["weinen","to cry"],
+["wenigstens","at least"],
+["wenn","if / when"],
+["wer","who"],
+["windig","windy"],
+["wirklich","really"],
+["der Witz","joke"],
+["witzig","funny / witty"],
+["wo","where"],
+["woher","where from"],
+["wohin","where to"],
+["die Werkstatt","garage / workshop"],
+["der Wettbewerb","competition"],
+["das Wohnzimmer","living room"],
+["wie","how"],
+["wieder","again"],
+["der Workshop","workshop"],
+["der Wunsch","wish"],
+["wünschen","to wish"],
+["die Wurst","sausage"],
+["die Zahl","number"],
+["der Zahn","tooth"],
+["zeichnen","to draw"],
+["zuletzt","lastly / finally"],
+["zumachen","to close"],
+["zeigen","to show"],
+["die Zeitschrift","magazine"],
+["zurückfahren","to drive back"],
+["das Zelt","tent"],
+["das Zentrum","center"],
+["zurückgeben","to give back"],
+["der Zettel","note / slip of paper"],
+["zurückgehen","to go back"],
+["das Zeugnis","report card / certificate"],
+["zurückkommen","to come back"],
+["das Ziel","goal / destination"],
+["der Zirkus","circus"],
+["die Zitrone","lemon"],
+["der Zoo","zoo"],
+["der Zucker","sugar"],
+["zuerst","first / at first"],
+["zuhören","to listen (to)"],
+["die Tante","aunt"],
+["der Onkel","uncle"],
+["der Enkel","grandchild / grandson"],
+["anstrengend","exhausting / strenuous"],
+["ausverkauft","sold out"],
+["backen","to bake"],
+["die Bedienung","service / waiter"],
+["tanken","to fill up (fuel)"],
+["die Tankstelle","gas station"],
+["der Stau","traffic jam"],
+["die Panne","breakdown"],
+["die Fähre","ferry"],
+["der Hafen","harbor / port"],
+["die Grenze","border"],
+["die Linie","line (bus/tram number)"],
+["die Richtung","direction"],
+["der Aufenthalt","stay / stopover"],
+["hin und zurück","there and back / round trip"],
+["die Tablette","pill / tablet"],
+["der Zahnarzt","dentist"],
+["die Versicherung","insurance"],
+["der Pfeffer","pepper"],
+["die Marmelade","jam"],
+["der Joghurt","yogurt"],
+["die Sahne","cream (whipped)"],
+["anprobieren","to try on"],
+["der Gürtel","belt"],
+["die Socke","sock"],
+["die Terrasse","terrace / patio"],
+["der Quadratmeter","square meter"],
+["der Arbeitgeber","employer"],
+["der Arbeitnehmer","employee"],
+["der Lebenslauf","CV / résumé"],
+["der Anhang","attachment"],
+["ausdrucken","to print out"],
+["löschen","to delete"],
+["abbiegen","to turn (off a road)"],
+["ziehen","to pull"],
+["klingeln","to ring (bell)"],
+["begrüßen","to greet"],
+["wiegen","to weigh"],
+["arm","poor"],
+["eng","tight / narrow"],
+["gemütlich","cozy"],
+["hübsch","pretty"],
+["niedrig","low"],
+["schlank","slim"],
+["danach","afterwards"],
+["davor","before that"],
+["hoffentlich","hopefully"],
+["kaum","hardly / barely"],
+["nachher","later / afterwards"],
+["trotzdem","nevertheless / anyway"],
+["unterwegs","on the way / out and about"],
+["gleichfalls","likewise / same to you"],
+["der Nebel","fog"],
+["der Sturm","storm"],
+["die Temperatur","temperature"]
+];
+
+
+/* ---------- data ---------- */
+const PACKS = { A1: VOCAB, A2: VOCAB_A2 };
+const ART_COLOR = { der:"#6ab0ff", die:"#ff7a9e", das:"#ffc857" };
+const seededShuffle = (arr, seed) => {           // stable order across sessions
+  let s = seed; const r = () => (s = (s*1664525+1013904223)>>>0) / 4294967296;
+  const a = arr.slice();
+  for (let i=a.length-1;i>0;i--){ const j = Math.floor(r()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+};
+// unlock order: short words first, stable pseudo-random tie-break
+const ORDERED = {};
+for (const [k,list] of Object.entries(PACKS)){
+  ORDERED[k] = seededShuffle(list, 1337).sort((a,b)=>a[0].length-b[0].length);
+}
+const articleOf = w => { const m = w.match(/^(der|die|das)\s/); return m ? m[1] : null; };
+
+/* ---------- storage ---------- */
+const DB_KEY = "wortapoc.v1";
+let DB = { profiles:{}, last:null };
+try { const raw = localStorage.getItem(DB_KEY); if (raw) DB = JSON.parse(raw); } catch(e){}
+const save = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e){} };
+const blankProfile = name => ({ name, sound:true, words:{}, unlocked:{A1:25,A2:25},
+  highScore:0, bestWave:0, bestCombo:0, games:0, keysOk:0, keysBad:0,
+  runs:[], streak:{last:"",count:0} });
+const wordStat = (p,w) => p.words[w] || (p.words[w] = {k:0,c:0,e:0,l:0,m:0});
+
+/* ---------- dom ---------- */
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d");
+let W=0, H=0, DPR=1;
+function resize(){ DPR = Math.min(devicePixelRatio||1,2);
+  W = innerWidth; H = innerHeight; cv.width = W*DPR; cv.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0); }
+addEventListener("resize", resize); resize();
+
+/* ---------- audio ---------- */
+let AC = null, soundOn = true;
+function ac(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if (AC && AC.state==="suspended") AC.resume(); return AC; }
+function tone(f0,f1,dur,type,vol){ const a=ac(); if(!a||!soundOn) return;
+  const o=a.createOscillator(), g=a.createGain(), t=a.currentTime;
+  o.type=type||"square"; o.frequency.setValueAtTime(f0,t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(f1,1),t+dur);
+  g.gain.setValueAtTime(vol||.06,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t+dur+.02); }
+const sShoot=()=>tone(900,500,.05,"square",.03), sHit=()=>tone(240,180,.04,"triangle",.05),
+  sErr=()=>tone(140,90,.16,"sawtooth",.07), sKill=()=>{tone(600,80,.22,"square",.06);},
+  sWave=()=>{tone(330,660,.14,"triangle",.06);setTimeout(()=>tone(440,880,.18,"triangle",.06),140);},
+  sHurt=()=>tone(110,55,.3,"sawtooth",.1),
+  sOver=()=>{tone(440,110,.7,"sawtooth",.08);};
+
+/* ---------- typing tokens (umlaut-friendly) ---------- */
+const ALT = {"ä":["ä","ae"],"ö":["ö","oe"],"ü":["ü","ue"],"ß":["ß","ss"]};
+const makeTokens = word => [...word.toLowerCase()].map(c => ALT[c] || [c]);
+function feed(z,k){
+  const alts = z.tokens[z.ti], cand = z.buf + k;
+  let partial = false;
+  for (const a of alts){ if (a === cand) { z.ti++; z.buf=""; return "ok"; }
+    if (a.startsWith(cand)) partial = true; }
+  if (partial){ z.buf = cand; return "part"; }
+  return "bad";
+}
+
+/* ---------- game state ---------- */
+let state = "menu";      // menu | play | pause | over
+let profile = null;
+let packsOn = {A1:true, A2:false};
+let mode = "copy";       // copy | recall
+const G = {};            // per-run state
+
+function activePool(){
+  let pool = [];
+  for (const k of ["A1","A2"]) if (packsOn[k])
+    pool = pool.concat(ORDERED[k].slice(0, profile.unlocked[k]).map(e=>({g:e[0],e:e[1],pack:k})));
+  return pool;
+}
+function pickWord(){
+  const onScreen = new Set(G.zombies.map(z=>z.g));
+  const pool = activePool().filter(w=>!onScreen.has(w.g));
+  if (!pool.length) return null;
+  const ideal = Math.min(4 + G.wave, 12);
+  let total = 0;
+  const weights = pool.map(w=>{
+    const s = profile.words[w.g];
+    let wt = 1 + (s ? s.e*2 + s.l*3 : 1.5);          // unseen words slightly favored
+    if (s && s.m) wt *= .18;                          // mastered words retire
+    wt *= 1/(1+Math.abs(w.g.length-ideal)*.28);       // length ramps with wave
+    total += wt; return wt;
+  });
+  let r = Math.random()*total;
+  for (let i=0;i<pool.length;i++){ r -= weights[i]; if (r<=0) return pool[i]; }
+  return pool[pool.length-1];
+}
+function bossWord(){
+  const pool = activePool().sort((a,b)=>b.g.length-a.g.length).slice(0,12);
+  return pool[Math.floor(Math.random()*pool.length)] || {g:"die Sehenswürdigkeit",e:"sight / attraction",pack:"A1"};
+}
+
+/* ---------- zombies ---------- */
+const Z_EMO = ["🧟","🧟‍♂️","🧟‍♀️"];
+function spawnZombie(boss){
+  const w = boss ? bossWord() : pickWord();
+  if (!w) return;
+  const z = {
+    g:w.g, e:w.e, pack:w.pack, tokens:makeTokens(w.g), ti:0, buf:"",
+    x: 44 + Math.random()*(W-88), y: -34,
+    v: (H*0.05 + G.wave*3.5 + Math.random()*12) * (boss?0.5:1),
+    boss, emo: Z_EMO[Math.floor(Math.random()*Z_EMO.length)],
+    bob: Math.random()*6.28, err:0, hint:0, angry:0, dead:0
+  };
+  G.zombies.push(z);
+}
+
+/* ---------- run ---------- */
+function newRun(){
+  G.zombies=[]; G.bullets=[]; G.parts=[]; G.floats=[];
+  G.wave=1; G.score=0; G.combo=0; G.hearts=5;
+  G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null;
+  G.keysOk=0; G.keysBad=0; G.chars=0; G.t0=performance.now(); G.masteredRun=0;
+  G.weak={}; G.over=false;
+  $("newwords").textContent="";
+  updateHUD(); renderTypebar();
+}
+let KB_H = 0;
+function groundY(){ return H - KB_H - 104; }
+
+function loseHeart(z){
+  G.hearts--; sHurt(); flash(.5);
+  const s = wordStat(profile, z.g); s.l++; s.c=0; s.m=0;
+  G.weak[z.g]=z.e;
+  updateHUD();
+  if (G.hearts<=0) gameOver();
+}
+function killZombie(z){
+  z.dead=1; sKill();
+  const clean = z.err===0 && z.hint===0;
+  const s = wordStat(profile, z.g);
+  s.k++; if (clean){ s.c++; if (s.c>=3 && !s.m){ s.m=1; G.masteredRun++; float(z.x,z.y-40,"GELERNT ✓","#ffc857",16);} }
+  else { s.c=0; G.weak[z.g]=z.e; }
+  const mult = 1 + Math.min(G.combo,10)*.1;
+  const pts = Math.round(z.g.replace(/\s/g,"").length*10*mult*(z.boss?2:1));
+  G.score += pts; G.combo++;
+  if (G.combo>profile.bestCombo) profile.bestCombo=G.combo;
+  float(z.x, z.y-20, "+"+pts, "#8ee04a", 15);
+  burst(z.x,z.y,z.boss?36:16);
+  if (G.target===z) G.target=null;
+  updateHUD(); renderTypebar();
+}
+function gameOver(){
+  if (G.over) return; G.over=true;
+  state="over"; sOver(); layoutKB();
+  const mins=(performance.now()-G.t0)/60000;
+  const acc = G.keysOk+G.keysBad ? Math.round(100*G.keysOk/(G.keysOk+G.keysBad)) : 100;
+  const wpm = mins>0 ? Math.round((G.keysOk/5)/mins) : 0;
+  profile.games++; profile.keysOk+=G.keysOk; profile.keysBad+=G.keysBad;
+  if (G.score>profile.highScore) profile.highScore=G.score;
+  if (G.wave>profile.bestWave) profile.bestWave=G.wave;
+  const today = new Date().toISOString().slice(0,10);
+  const st = profile.streak;
+  if (st.last!==today){
+    const y = new Date(Date.now()-864e5).toISOString().slice(0,10);
+    st.count = (st.last===y) ? st.count+1 : 1; st.last=today;
+  }
+  profile.runs.push({d:today,score:G.score,wave:G.wave,wpm,acc,mode,
+    packs:Object.keys(packsOn).filter(k=>packsOn[k]).join("+")});
+  if (profile.runs.length>60) profile.runs.shift();
+  save();
+  $("overstats").innerHTML =
+    stat(G.score,"score")+stat(G.wave,"wave")+stat(wpm,"wpm")+stat(acc+"%","accuracy")+
+    stat(G.masteredRun,"words mastered")+stat("🔥"+st.count,"day streak");
+  const weak = Object.entries(G.weak).slice(0,10);
+  $("overweak").innerHTML = weak.length
+    ? "<h2>Words that almost got you — review these</h2>"+
+      "<table><tbody>"+weak.map(([g,e])=>{
+        const a=articleOf(g);
+        return `<tr><td class="weakword" ${a?`style="color:${ART_COLOR[a]}"`:""}>${g}</td><td class="mini">${e}</td></tr>`;
+      }).join("")+"</tbody></table>"
+    : "<p class='mini'>Flawless — no weak words this run. 🏆</p>";
+  show("over");
+}
+const stat=(v,k)=>`<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+
+/* ---------- fx ---------- */
+function float(x,y,txt,col,size){ G.floats.push({x,y,txt,col,size,t:1}); }
+function burst(x,y,n){ for(let i=0;i<n;i++){ const a=Math.random()*6.28, v=40+Math.random()*140;
+  G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,t:.6+Math.random()*.4,
+    col: Math.random()<.7?"#8ee04a":"#e5484d"}); } }
+function flash(op){ const f=$("flash"); f.style.transition="none"; f.style.opacity=op*.35;
+  requestAnimationFrame(()=>{ f.style.transition="opacity .35s"; f.style.opacity=0; }); }
+let shakeT=0;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- input ---------- */
+addEventListener("keydown", ev=>{
+  if (state==="menu" && ev.target.tagName==="INPUT"){ if(ev.key==="Enter") addProfile(); return; }
+  if (ev.key==="Escape"){
+    if (state==="play"){ state="pause"; show("pause"); }
+    else if (state==="pause"){ hideAll(); state="play"; loop(); }
+    return;
+  }
+  if (state!=="play") return;
+  ac();
+  if (ev.key==="Tab"){ ev.preventDefault(); hint(); return; }
+  if (ev.key==="Backspace"){ if(G.target) G.target.buf=""; renderTypebar(); return; }
+  if (ev.key.length!==1 || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  ev.preventDefault();
+  const k = ev.key.toLowerCase();
+  handleKey(k);
+});
+function hint(){
+  if (mode!=="recall" || !G.target || G.target.dead) return;
+  const z=G.target; z.ti++; z.buf=""; z.hint++;
+  G.combo=0; G.score=Math.max(0,G.score-25);
+  float(z.x,z.y-20,"-25","#e5484d",13); sHit();
+  const s=wordStat(profile,z.g); s.e++; s.c=0; G.weak[z.g]=z.e;
+  if (z.ti>=z.tokens.length) killZombie(z);
+  updateHUD(); renderTypebar();
+}
+function handleKey(k){
+  let z = G.target;
+  if (z && z.dead) z = G.target = null;
+  if (!z){
+    // lock the lowest zombie (closest to the barricade) that accepts this key
+    let best=null;
+    for (const c of G.zombies){
+      if (c.dead) continue;
+      const probe={tokens:c.tokens,ti:c.ti,buf:c.buf};
+      if (feed(probe,k)!=="bad" && (!best || c.y>best.y)) best=c;
+    }
+    if (!best){ miss(); return; }
+    z = G.target = best;
+  }
+  const r = feed(z,k);
+  if (r==="bad"){ miss(z); return; }
+  G.keysOk++; G.chars++;
+  sShoot();
+  G.bullets.push({x:W/2,y:groundY()-42,tx:z.x,ty:z.y,t:0});
+  if (z.ti>=z.tokens.length) killZombie(z);
+  else renderTypebar();
+}
+function miss(z){
+  G.keysBad++; G.combo=0; sErr(); flash(.6);
+  if (navigator.vibrate) navigator.vibrate(40);
+  if (!reduceMotion) shakeT=.25;
+  $("tword").classList.remove("err"); void $("tword").offsetWidth; $("tword").classList.add("err");
+  if (z){ z.err++; z.angry=.6; z.v+=6;
+    const s=wordStat(profile,z.g); s.e++; s.c=0; G.weak[z.g]=z.e; }
+  updateHUD();
+}
+
+/* ---------- on-screen keyboard (mobile-first) ---------- */
+const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;
+function buildKB(){
+  const kb=$("kb");
+  const rows=[[..."qwertzuiopü"],[..."asdfghjklöä"],[..."yxcvbnmß-"],["hint"," ","back"]];
+  for (const r of rows){
+    const div=document.createElement("div"); div.className="krow";
+    for (const k of r){
+      const b=document.createElement("button"); b.className="key"; b.type="button";
+      if ("äöüß".includes(k)) b.classList.add("umlaut");
+      if (k===" "){ b.classList.add("space"); b.textContent="␣"; }
+      else if (k==="back"){ b.classList.add("fn"); b.textContent="⌫"; }
+      else if (k==="hint"){ b.classList.add("fn"); b.textContent="💡"; }
+      else b.textContent=k;
+      b.addEventListener("pointerdown", ev=>{
+        ev.preventDefault(); ac();
+        if (state!=="play") return;
+        if (k==="back"){ if(G.target){G.target.buf="";} renderTypebar(); }
+        else if (k==="hint") hint();
+        else handleKey(k);
+      });
+      div.appendChild(b);
+    }
+    kb.appendChild(div);
+  }
+}
+buildKB();
+function layoutKB(){
+  const kb=$("kb");
+  const on = IS_TOUCH && (state==="play" || state==="pause");
+  kb.style.display = on ? "flex" : "none";
+  KB_H = on ? kb.offsetHeight : 0;
+  document.documentElement.style.setProperty("--kbh", KB_H+"px");
+}
+addEventListener("resize", layoutKB);
+
+/* ---------- HUD / typebar ---------- */
+function updateHUD(){
+  $("hearts").textContent = "♥".repeat(Math.max(G.hearts,0)) + "·".repeat(Math.max(5-G.hearts,0));
+  $("wave").textContent = G.wave;
+  $("score").textContent = G.score;
+  $("combo").textContent = G.combo>1 ? "×"+(1+Math.min(G.combo,10)*.1).toFixed(1)+" combo "+G.combo : "";
+  $("combo").className = G.combo>=5 ? "hot":"";
+  $("runinfo").textContent = profile.name+" · "+Object.keys(packsOn).filter(k=>packsOn[k]).join("+")
+    +" · "+(mode==="copy"?"Copy":"Recall");
+}
+function renderTypebar(){
+  const z = G.target;
+  const tw=$("tword"), tm=$("tmean"), th=$("thint");
+  if (!z || z.dead){
+    tw.innerHTML = `<span class="blank">${mode==="recall"?"…type to engage the nearest zombie":"…type the first letter of any word"}</span>`;
+    tm.textContent = ""; th.textContent="";
+    return;
+  }
+  const done = [...z.g].slice(0,z.ti).join("");
+  const todo = [...z.g].slice(z.ti).join("");
+  if (mode==="copy"){
+    tw.innerHTML = `<span class="done">${esc(done)}</span><span class="todo">${esc(todo)}</span>`;
+  } else {
+    const blanks = [...todo].map(c=>c===" "?"&nbsp;&nbsp;":"_").join("");
+    tw.innerHTML = `<span class="done">${esc(done)}</span><span class="blank">${blanks}</span>`;
+  }
+  tm.textContent = z.e;
+  th.textContent = mode==="recall" ? "Tab reveals a letter (−25)" : (z.buf?`typing "${z.buf}…" for ${z.g[z.ti]}`:"");
+}
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+
+/* ---------- update & draw ---------- */
+let last=0, rafId=0;
+function loop(ts){
+  if (state!=="play") return;
+  rafId = requestAnimationFrame(loop);
+  if (!ts) ts=performance.now();
+  const dt = Math.min((ts-(last||ts))/1000,.05); last=ts;
+  update(dt); draw(ts/1000);
+}
+function update(dt){
+  // spawning
+  if (G.toSpawn>0){
+    G.spawnT -= dt;
+    if (G.spawnT<=0){
+      const isBoss = (G.wave%5===0) && G.toSpawn===1;
+      spawnZombie(isBoss);
+      G.toSpawn--;
+      G.spawnT = Math.max(1.9 - G.wave*.08, 0.75) * (0.7+Math.random()*.6);
+    }
+  } else if (!G.zombies.some(z=>!z.dead) ){
+    G.waveGap -= dt;
+    if (G.waveGap<=0){
+      // next wave
+      G.wave++; sWave();
+      if (G.wave%3===0 && G.hearts<5){ G.hearts++; }
+      let unlocked=0;
+      for (const k of ["A1","A2"]) if (packsOn[k] && profile.unlocked[k]<ORDERED[k].length){
+        const add=Math.min(4, ORDERED[k].length-profile.unlocked[k]);
+        profile.unlocked[k]+=add; unlocked+=add;
+      }
+      if (unlocked) $("newwords").textContent = "+"+unlocked+" new words unlocked";
+      save();
+      G.toSpawn = Math.min(6+G.wave, 16) + (G.wave%5===0?1:0);
+      G.spawnT = 0.8; G.waveGap = 1.5;
+      float(W/2,H*.3,"WAVE "+G.wave,"#e8e6d9",30);
+      updateHUD();
+    }
+  }
+  // zombies
+  for (const z of G.zombies){
+    if (z.dead){ z.dead+=dt*2; continue; }
+    z.y += z.v*dt; z.bob += dt*6; z.angry=Math.max(0,z.angry-dt);
+    if (z.y > groundY()-30){ z.dead=1; loseHeart(z); if(G.target===z){G.target=null;renderTypebar();} }
+  }
+  G.zombies = G.zombies.filter(z=>!z.dead || z.dead<1.6);
+  // recall auto-target: lowest zombie (closest to the barricade)
+  if (mode==="recall" && (!G.target || G.target.dead)){
+    let best=null;
+    for (const c of G.zombies) if(!c.dead && (!best||c.y>best.y)) best=c;
+    if (best!==G.target){ G.target=best; renderTypebar(); }
+  }
+  // bullets
+  for (const b of G.bullets){ b.t += dt*10; }
+  G.bullets = G.bullets.filter(b=>b.t<1);
+  // fx
+  for (const p of G.parts){ p.t-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=300*dt; }
+  G.parts = G.parts.filter(p=>p.t>0);
+  for (const f of G.floats){ f.t-=dt*.8; f.y-=30*dt; }
+  G.floats = G.floats.filter(f=>f.t>0);
+  shakeT = Math.max(0, shakeT-dt);
+}
+function draw(t){
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if (shakeT>0) ctx.translate((Math.random()-.5)*10*shakeT,(Math.random()-.5)*10*shakeT);
+  // sky
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,"#0a0d12"); sky.addColorStop(.55,"#10150c"); sky.addColorStop(1,"#0c0f0a");
+  ctx.fillStyle=sky; ctx.fillRect(-20,-20,W+40,H+40);
+  // moon
+  ctx.fillStyle="rgba(232,230,217,.85)"; ctx.beginPath(); ctx.arc(W*.84,H*.09,28,0,6.29); ctx.fill();
+  ctx.fillStyle="#0a0d12"; ctx.beginPath(); ctx.arc(W*.84+10,H*.09-7,25,0,6.29); ctx.fill();
+  const gy = groundY();
+  // graveyard field lines
+  ctx.strokeStyle="rgba(142,224,74,.06)"; ctx.lineWidth=1;
+  for(let i=1;i<7;i++){ const x=i*(W/7); ctx.beginPath(); ctx.moveTo(x,60); ctx.lineTo(x,gy); ctx.stroke(); }
+  // dirt strip + barricade + couple at the bottom
+  ctx.fillStyle="#11170c"; ctx.fillRect(-20,gy,W+40,H-gy);
+  ctx.save(); ctx.translate(W/2,gy);
+  ctx.font="40px serif"; ctx.textAlign="center"; ctx.fillText("👫",0,-6);
+  ctx.restore();
+  ctx.fillStyle="#3a2d18";
+  for(let i=0;i<3;i++){ ctx.fillRect(-10,gy+6+i*12,W+20,9); }
+  // danger line
+  ctx.strokeStyle="rgba(229,72,77,.3)"; ctx.setLineDash([6,8]);
+  ctx.beginPath(); ctx.moveTo(0,gy-34); ctx.lineTo(W,gy-34); ctx.stroke(); ctx.setLineDash([]);
+  // bullets
+  for (const b of G.bullets){
+    const x=b.x+(b.tx-b.x)*b.t, y=b.y+(b.ty-b.y)*b.t;
+    ctx.strokeStyle="rgba(255,200,87,.9)"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(x,y+16); ctx.lineTo(x,y); ctx.stroke();
+  }
+  // zombies (draw far→near so labels layer nicely)
+  const zs=[...G.zombies].sort((a,b)=>a.y-b.y);
+  for (const z of zs) drawZombie(z,t);
+  // particles
+  for (const p of G.parts){ ctx.globalAlpha=Math.max(p.t,0); ctx.fillStyle=p.col;
+    ctx.fillRect(p.x-2,p.y-2,4,4); }
+  ctx.globalAlpha=1;
+  // floats
+  for (const f of G.floats){ ctx.globalAlpha=Math.min(f.t*2,1);
+    ctx.font="800 "+f.size+"px "+"ui-monospace,Menlo,monospace";
+    ctx.textAlign="center"; ctx.fillStyle=f.col; ctx.fillText(f.txt,f.x,f.y); }
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+function drawZombie(z,t){
+  const sway = Math.sin(z.bob)*4;
+  const size = z.boss?64:38;
+  ctx.save(); ctx.translate(z.x, z.y);
+  if (z.dead){ ctx.globalAlpha=Math.max(1-(z.dead-1)/.6,0);
+    ctx.font=(size*.8)+"px serif"; ctx.textAlign="center"; ctx.fillText("💀",0,0);
+    ctx.restore(); return; }
+  if (z.angry>0){ ctx.shadowColor="#e5484d"; ctx.shadowBlur=18; }
+  ctx.font=size+"px serif"; ctx.textAlign="center";
+  ctx.fillText(z.emo,sway,0);
+  ctx.shadowBlur=0;
+  const isT = G.target===z;
+  // word pill
+  const done=[...z.g].slice(0,z.ti).join(""), todo=[...z.g].slice(z.ti).join("");
+  const fs = z.boss?17:14;
+  ctx.font=`700 ${fs}px ui-monospace,Menlo,monospace`;
+  const showWord = mode==="copy" || z.ti>0 || isT;
+  let label;
+  if (mode==="copy") label = z.g;
+  else label = done + [...todo].map(c=>c===" "?" ":"_").join("");
+  const wpx = ctx.measureText(label).width;
+  const pad=8, ph=fs+10, py=-size-(z.boss?26:18);
+  // keep the label on screen even when the zombie hugs an edge
+  const cx = Math.min(Math.max(z.x, wpx/2+pad+4), W-wpx/2-pad-4) - z.x;
+  ctx.fillStyle = isT ? "rgba(20,26,16,.95)" : "rgba(12,15,10,.8)";
+  ctx.strokeStyle = isT ? "#8ee04a" : "rgba(152,160,135,.35)";
+  roundRect(cx-wpx/2-pad, py-ph+4, wpx+pad*2, ph, 4); ctx.fill(); ctx.stroke();
+  // colored article
+  const art = articleOf(z.g);
+  let x = cx-wpx/2;
+  ctx.textAlign="left";
+  const donePart = mode==="copy" ? done : done;
+  const restPart = mode==="copy" ? todo : [...todo].map(c=>c===" "?" ":"_").join("");
+  ctx.fillStyle="#8ee04a"; ctx.fillText(donePart,x,py); x+=ctx.measureText(donePart).width;
+  if (art && z.ti < art.length+1 && mode==="copy"){
+    // color the untyped part of the article
+    const artRest = (art+" ").slice(z.ti);
+    ctx.fillStyle=ART_COLOR[art]; ctx.fillText(artRest,x,py); x+=ctx.measureText(artRest).width;
+    const rest2 = restPart.slice(artRest.length);
+    ctx.fillStyle="#e8e6d9"; ctx.fillText(rest2,x,py);
+  } else {
+    ctx.fillStyle = mode==="copy" ? "#e8e6d9" : "#98a087";
+    ctx.fillText(restPart,x,py);
+  }
+  // meaning
+  ctx.textAlign="center"; ctx.font=`400 ${z.boss?13:11}px system-ui,sans-serif`;
+  ctx.fillStyle="rgba(152,160,135,.9)";
+  ctx.fillText(z.e, cx, py+14);
+  if (isT){ ctx.fillStyle="#8ee04a"; ctx.font="10px system-ui"; ctx.fillText("▼", 0, -size-2); }
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ---------- screens ---------- */
+function show(id){ hideAll(); $(id).classList.remove("hidden"); }
+function hideAll(){ for (const id of ["menu","stats","pause","over"]) $(id).classList.add("hidden"); }
+
+function renderProfiles(){
+  const box=$("profiles"); box.innerHTML="";
+  const names=Object.keys(DB.profiles);
+  if (!names.length) box.innerHTML="<span class='mini'>no survivors yet — add yourself and your partner ↓</span>";
+  for (const n of names){
+    const b=document.createElement("button");
+    b.className="chip"+(profile&&profile.name===n?" on":"");
+    b.textContent="🧑 "+n;
+    b.onclick=()=>{ profile=DB.profiles[n]; DB.last=n; soundOn=profile.sound; save(); renderProfiles(); syncMenu(); };
+    box.appendChild(b);
+  }
+}
+function addProfile(){
+  const n=$("pname").value.trim();
+  if (!n || DB.profiles[n]) return;
+  DB.profiles[n]=blankProfile(n); profile=DB.profiles[n]; DB.last=n; $("pname").value="";
+  save(); renderProfiles();
+}
+$("paddbtn").onclick=addProfile;
+function syncMenu(){
+  $("packA1").classList.toggle("on",packsOn.A1);
+  $("packA2").classList.toggle("on",packsOn.A2);
+  $("modeCopy").classList.toggle("on",mode==="copy");
+  $("modeRecall").classList.toggle("on",mode==="recall");
+  $("soundbtn").textContent = soundOn?"🔊 Sound on":"🔇 Sound off";
+}
+$("packA1").onclick=()=>{ packsOn.A1=!packsOn.A1; if(!packsOn.A1&&!packsOn.A2)packsOn.A2=true; syncMenu(); };
+$("packA2").onclick=()=>{ packsOn.A2=!packsOn.A2; if(!packsOn.A1&&!packsOn.A2)packsOn.A1=true; syncMenu(); };
+$("modeCopy").onclick=()=>{ mode="copy"; syncMenu(); };
+$("modeRecall").onclick=()=>{ mode="recall"; syncMenu(); };
+$("soundbtn").onclick=()=>{ soundOn=!soundOn; if(profile){profile.sound=soundOn;save();} syncMenu(); };
+$("startbtn").onclick=()=>{
+  if (!profile){ $("pname").focus(); $("pname").placeholder="← name first!"; return; }
+  ac(); hideAll(); state="play";
+  $("hud").style.display="flex"; $("typebar").style.display="flex";
+  layoutKB(); newRun(); last=0; loop();
+};
+$("pausebtn").onclick=()=>{ if (state==="play"){ state="pause"; show("pause"); } };
+$("statsbtn").onclick=()=>{ renderStats(); show("stats"); };
+$("statsback").onclick=()=>show("menu");
+$("resumebtn").onclick=()=>{ hideAll(); state="play"; last=0; loop(); };
+$("quitbtn").onclick=()=>{ state="over"; gameOver(); };
+$("againbtn").onclick=()=>{ hideAll(); state="play"; layoutKB(); newRun(); last=0; loop(); };
+$("menubtn").onclick=()=>{ state="menu"; $("hud").style.display="none"; $("typebar").style.display="none";
+  layoutKB(); renderProfiles(); syncMenu(); show("menu"); };
+addEventListener("blur",()=>{ if(state==="play"){ state="pause"; show("pause"); } });
+
+/* ---------- stats screen ---------- */
+function masteredCount(p,pack){ let m=0;
+  for (const [w] of PACKS[pack]) { const s=p.words[w]; if (s&&s.m) m++; } return m; }
+function renderStats(){
+  const names=Object.keys(DB.profiles);
+  if (!names.length){ $("statsbody").innerHTML="<p class='mini'>No survivors yet.</p>"; return; }
+  const cols = names.map(n=>{
+    const p=DB.profiles[n];
+    const acc=p.keysOk+p.keysBad?Math.round(100*p.keysOk/(p.keysOk+p.keysBad)):100;
+    const mA1=masteredCount(p,"A1"), mA2=masteredCount(p,"A2");
+    const weak=Object.entries(p.words).filter(([w,s])=>!s.m&&(s.e+s.l)>0)
+      .sort((a,b)=>(b[1].e*2+b[1].l*3)-(a[1].e*2+a[1].l*3)).slice(0,8);
+    const lookup=w=>{ for(const k of["A1","A2"]){const f=PACKS[k].find(e=>e[0]===w); if(f)return f[1];} return ""; };
+    return `<div>
+      <h2>🧑 ${n}</h2>
+      <div class="statgrid">
+        ${stat(p.highScore,"high score")}${stat(p.bestWave,"best wave")}
+        ${stat(p.games,"runs")}${stat(acc+"%","accuracy")}
+        ${stat("🔥"+(p.streak.count||0),"day streak")}${stat(p.bestCombo,"best combo")}
+      </div>
+      <p class="mini">A1 mastered — ${mA1} / ${PACKS.A1.length}</p>
+      <div class="bar"><i style="width:${100*mA1/PACKS.A1.length}%"></i></div>
+      <p class="mini" style="margin-top:8px">A2 mastered — ${mA2} / ${PACKS.A2.length}</p>
+      <div class="bar"><i style="width:${100*mA2/PACKS.A2.length}%"></i></div>
+      ${weak.length?`<h2>needs practice</h2><table><tbody>${
+        weak.map(([w,s])=>{const a=articleOf(w);
+          return `<tr><td class="weakword" ${a?`style="color:${ART_COLOR[a]}"`:""}>${w}</td>
+          <td class="mini">${lookup(w)}</td><td class="num mini">${s.e+s.l}✗</td></tr>`;}).join("")
+      }</tbody></table>`:""}
+    </div>`;
+  });
+  $("statsbody").innerHTML = `<div class="cols">${cols.join("")}</div>`;
+}
+
+/* ---------- boot ---------- */
+$("na1").textContent=PACKS.A1.length; $("na2").textContent=PACKS.A2.length;
+if (DB.last && DB.profiles[DB.last]){ profile=DB.profiles[DB.last]; soundOn=profile.sound; }
+renderProfiles(); syncMenu(); show("menu");
+</script>
+
+</body>
+</html>
