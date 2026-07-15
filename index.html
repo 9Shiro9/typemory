@@ -24,11 +24,13 @@
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--bone);font-family:var(--sans);touch-action:manipulation}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block}
-.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  background:rgba(6,8,4,.82);backdrop-filter:blur(3px);z-index:20;overflow:auto;padding:24px}
+.overlay{position:fixed;inset:0;display:flex;
+  background:rgba(6,8,4,.82);backdrop-filter:blur(3px);z-index:20;overflow:auto;
+  padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}
 .hidden{display:none!important}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;
-  padding:28px 32px;max-width:720px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+  padding:28px 32px;max-width:720px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6);
+  margin:auto}
 h1{font:900 clamp(28px,5vw,44px)/1.05 var(--sans);text-transform:uppercase;letter-spacing:.04em;
   color:var(--bone);text-shadow:0 0 18px rgba(229,72,77,.45),0 2px 0 #000}
 h1 .blut{color:var(--red)}
@@ -57,7 +59,8 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
   border-radius:4px;padding:1px 6px;color:var(--bone);font-size:12px}
 /* HUD */
 #hud{position:fixed;top:0;left:0;right:0;display:none;justify-content:space-between;
-  align-items:center;padding:10px 16px;z-index:10;font-family:var(--mono);font-size:14px;
+  align-items:center;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;z-index:10;
+  font-family:var(--mono);font-size:14px;
   background:linear-gradient(rgba(6,8,4,.85),transparent);pointer-events:none}
 #hud .grp{display:flex;gap:18px;align-items:center}
 #hearts{color:var(--red);letter-spacing:2px;font-size:16px}
@@ -95,7 +98,8 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
 #kb .key.umlaut{color:var(--amber)}
 #kb .key.space{max-width:none;flex:4}
 #kb .key.fn{max-width:64px;flex:1.6;color:var(--dim)}
-@media(max-width:640px){.panel{padding:20px 18px}.overlay{padding:12px}}
+@media(max-width:640px){.panel{padding:20px 18px}
+  .overlay{padding:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))}}
 /* tables */
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
