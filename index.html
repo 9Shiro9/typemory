@@ -87,6 +87,11 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
 #thint{font:400 13px var(--sans);color:#5a6350;text-transform:uppercase;letter-spacing:.1em}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 #flash{position:fixed;inset:0;background:var(--red);opacity:0;pointer-events:none;z-index:15}
+/* hidden field that summons the device keyboard (16px font stops iOS focus-zoom) */
+#nki{position:fixed;bottom:0;left:0;width:2px;height:2px;opacity:0;border:0;padding:0;
+  font-size:16px;background:transparent;color:transparent;caret-color:transparent;z-index:1}
+#hintbtn{pointer-events:auto;position:absolute;right:10px;top:-4px;padding:6px 12px;
+  font-size:17px;display:none}
 /* Neue Wörter intro card */
 #introword{font:800 clamp(30px,8vw,42px)/1.2 var(--mono)}
 #intromean{font:500 18px var(--sans);color:var(--dim);margin:6px 0 14px}
@@ -143,8 +148,11 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
   </div>
 </div>
 
+<input id="nki" type="text" autocomplete="off" autocorrect="off" autocapitalize="none"
+  spellcheck="false" enterkeyhint="go" aria-hidden="true" tabindex="-1">
 <div id="typebar">
   <div id="umbub"></div>
+  <button id="hintbtn">💡</button>
   <div id="tword"></div>
   <div id="tmean"></div>
   <div id="thint"></div>
@@ -183,6 +191,12 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
     <p class="mini" style="margin-top:6px">Learn levels each word up as you master it:
       📖 word shown → ⚡ flashes, then vanishes mid-air → 🧠 meaning only →
       ❓ surprise checks where you type the <i>meaning</i>. No more mindless copying.</p>
+
+    <h2>Input</h2>
+    <div class="row">
+      <button class="chip" id="oskchip">⌨️ Use on-screen keyboard</button>
+      <span class="mini">off = your device's own keyboard (phones/tablets)</span>
+    </div>
 
     <h2>Article colors — learn the gender by color</h2>
     <div class="legend">
@@ -1645,6 +1659,31 @@ if (typeof module !== "undefined" && module.exports){
     srsDueWithin, srsDueCount, srsDueTomorrowCount, srsWeight, dayKey };
 }
 
+/* Native-keyboard input extraction — pure functions.
+   The hidden field holds a one-space sentinel so backspace produces a
+   detectable value change. Spliced into the game AND require()d by tests. */
+const NKI_SENTINEL = " ";
+
+/* diff previous vs current field value → backspaces + inserted characters.
+   Handles multi-char IME/swipe insertions and mid-string autocompletions. */
+function extractKeys(prev, val){
+  let i = 0;
+  while (i < prev.length && i < val.length && prev[i] === val[i]) i++;
+  return { backspaces: prev.length - i, keys: [...val.slice(i)] };
+}
+
+/* keep only characters the game understands; Enter and garbage are dropped.
+   Umlauts pass through directly (German layouts); everything else lowercased. */
+function filterKey(k){
+  if (k === "\n" || k === "\r") return null;
+  const c = k.toLowerCase();
+  return /^[a-zäöüß\- ']$/.test(c) ? c : null;
+}
+
+if (typeof module !== "undefined" && module.exports){
+  module.exports = { NKI_SENTINEL, extractKeys, filterKey };
+}
+
 
 /* ---------- data ---------- */
 const PACKS = { A1: VOCAB, A2: VOCAB_A2 };
@@ -1859,6 +1898,12 @@ function renderIntro(){
 }
 /* route a typed character to the intro card or the battle */
 function routeChar(k){ if (G.intro){ introKey(k); return; } handleKey(k); }
+function routeBackspace(){
+  if (G.intro){ introKey("\b"); return; }
+  if (G.target){ const t = G.target;
+    if (t.kind === "en") t.typed = t.typed.slice(0, -1); else t.buf = ""; }
+  renderTypebar();
+}
 
 /* ---------- zombies ---------- */
 const Z_EMO = ["🧟","🧟‍♂️","🧟‍♀️"];
@@ -2005,12 +2050,9 @@ addEventListener("keydown", ev=>{
   }
   if (state!=="play") return;
   ac();
+  if (useNativeKB() && ev.target === NKI && ev.key !== "Tab"){ return; }
   if (ev.key==="Tab"){ ev.preventDefault(); hint(); return; }
-  if (ev.key==="Backspace"){
-    if (G.intro){ introKey("\b"); return; }
-    if (G.target){ const t=G.target;
-      if (t.kind==="en") t.typed=t.typed.slice(0,-1); else t.buf=""; }
-    renderTypebar(); return; }
+  if (ev.key==="Backspace"){ routeBackspace(); return; }
   if (ev.key.length!==1 || ev.metaKey || ev.ctrlKey || ev.altKey) return;
   ev.preventDefault();
   const k = ev.key.toLowerCase();
@@ -2092,11 +2134,7 @@ function buildKB(){
       b.addEventListener("pointerdown", ev=>{
         ev.preventDefault(); ac();
         if (state!=="play") return;
-        if (k==="back"){
-          if (G.intro){ introKey("\b"); return; }
-          if (G.target){ const t=G.target;
-            if (t.kind==="en") t.typed=t.typed.slice(0,-1); else t.buf=""; }
-          renderTypebar(); }
+        if (k==="back"){ routeBackspace(); }
         else if (k==="hint") hint();
         else routeChar(k);
       });
@@ -2106,14 +2144,49 @@ function buildKB(){
   }
 }
 buildKB();
+function useNativeKB(){ return IS_TOUCH && !(profile && profile.osk); }
+function kbInset(){
+  const vv = window.visualViewport;
+  if (!vv) return 0;
+  return Math.max(0, innerHeight - vv.height - vv.offsetTop);
+}
 function layoutKB(){
   const kb=$("kb");
-  const on = IS_TOUCH && (state==="play" || state==="pause");
-  kb.style.display = on ? "flex" : "none";
-  KB_H = on ? kb.offsetHeight : 0;
+  const osk = IS_TOUCH && profile && profile.osk && (state==="play" || state==="pause");
+  kb.style.display = osk ? "flex" : "none";
+  KB_H = osk ? kb.offsetHeight : kbInset();   // native keyboard height via VisualViewport
   document.documentElement.style.setProperty("--kbh", KB_H+"px");
+  $("hintbtn").style.display = (state==="play" && useNativeKB() && IS_TOUCH) ? "block" : "none";
 }
 addEventListener("resize", layoutKB);
+if (window.visualViewport){
+  visualViewport.addEventListener("resize", layoutKB);
+  visualViewport.addEventListener("scroll", layoutKB);
+}
+
+/* --- native (device) keyboard driver --- */
+const NKI = $("nki");
+let nkiPrev = NKI_SENTINEL;
+function nkiReset(){ NKI.value = NKI_SENTINEL; nkiPrev = NKI_SENTINEL; }
+function nkiFocus(){
+  if (state === "play" && useNativeKB()){
+    nkiReset();
+    try { NKI.focus({ preventScroll: true }); } catch(e){ NKI.focus(); }
+  }
+}
+NKI.addEventListener("input", () => {
+  if (state !== "play" || !useNativeKB()){ nkiReset(); return; }
+  const { backspaces, keys } = extractKeys(nkiPrev, NKI.value);
+  for (let i = 0; i < backspaces; i++) routeBackspace();
+  for (const raw of keys){ const k = filterKey(raw); if (k) routeChar(k); }
+  nkiReset();
+});
+NKI.addEventListener("blur", () => {
+  if (state === "play" && useNativeKB()) setTimeout(nkiFocus, 60);
+});
+NKI.addEventListener("focus", () => { setTimeout(() => window.scrollTo(0, 0), 0); });
+addEventListener("pointerdown", () => { if (state === "play") nkiFocus(); });
+$("hintbtn").addEventListener("pointerdown", ev => { ev.preventDefault(); ev.stopPropagation(); ac(); hint(); });
 
 /* ---------- HUD / typebar ---------- */
 function updateHUD(){
@@ -2407,6 +2480,7 @@ function updateDue(){
 }
 function syncMenu(){
   updateDue();
+  $("oskchip").classList.toggle("on", !!(profile && profile.osk));
   $("packA1").classList.toggle("on", packsOn.A1 && !packsOn.A2);
   $("packA2").classList.toggle("on", packsOn.A2 && !packsOn.A1);
   $("packBoth").classList.toggle("on", packsOn.A1 && packsOn.A2);
@@ -2419,6 +2493,7 @@ const setPacks=(a1,a2)=>{ packsOn.A1=a1; packsOn.A2=a2; syncMenu(); };
 $("packA1").onclick=()=>setPacks(true,false);
 $("packA2").onclick=()=>setPacks(false,true);
 $("packBoth").onclick=()=>setPacks(true,true);
+$("oskchip").onclick=()=>{ if (!profile) return; profile.osk = !profile.osk; save(); syncMenu(); };
 $("modeLearn").onclick=()=>{ mode="learn"; syncMenu(); };
 $("modeCopy").onclick=()=>{ mode="copy"; syncMenu(); };
 $("modeRecall").onclick=()=>{ mode="recall"; syncMenu(); };
@@ -2429,16 +2504,16 @@ $("startbtn").onclick=()=>{
   $("hud").style.display="flex"; $("typebar").style.display="flex";
   if (IS_TOUCH && !IS_STANDALONE && document.documentElement.requestFullscreen)
     document.documentElement.requestFullscreen().catch(()=>{});
-  layoutKB(); newRun(); last=0; loop();
+  layoutKB(); newRun(); last=0; loop(); nkiFocus();
 };
 $("pausebtn").onclick=()=>{ if (state==="play"){ state="pause"; show("pause"); } };
 $("statsbtn").onclick=()=>{ renderStats(); show("stats"); };
 $("statsback").onclick=()=>show("menu");
-$("resumebtn").onclick=()=>{ hideAll(); state="play"; unhideIntro(); last=0; loop(); };
+$("resumebtn").onclick=()=>{ hideAll(); state="play"; unhideIntro(); last=0; loop(); nkiFocus(); };
 $("quitbtn").onclick=()=>{ state="over"; gameOver(); };
-$("againbtn").onclick=()=>{ hideAll(); state="play"; layoutKB(); newRun(); last=0; loop(); };
+$("againbtn").onclick=()=>{ hideAll(); state="play"; layoutKB(); newRun(); last=0; loop(); nkiFocus(); };
 $("menubtn").onclick=()=>{ state="menu"; $("hud").style.display="none"; $("typebar").style.display="none";
-  layoutKB(); renderProfiles(); syncMenu(); show("menu"); };
+  NKI.blur(); layoutKB(); renderProfiles(); syncMenu(); show("menu"); };
 addEventListener("blur",()=>{ if(state==="play"){ state="pause"; show("pause"); } });
 
 /* ---------- stats screen ---------- */

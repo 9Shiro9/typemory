@@ -9,8 +9,11 @@ src = open(os.path.join(SRC, "game_src.html"), encoding="utf-8").read()
 vocab = (open(os.path.join(SRC, "vocab.js"), encoding="utf-8").read() + "\n"
        + open(os.path.join(SRC, "vocab2.js"), encoding="utf-8").read())
 sched = open(os.path.join(SRC, "scheduler.js"), encoding="utf-8").read()
-out = src.replace("/*__VOCAB__*/", vocab).replace("/*__SCHEDULER__*/", sched)
-assert "/*__VOCAB__*/" not in out and "/*__SCHEDULER__*/" not in out, "placeholder not replaced"
+inp = open(os.path.join(SRC, "input.js"), encoding="utf-8").read()
+out = (src.replace("/*__VOCAB__*/", vocab).replace("/*__SCHEDULER__*/", sched)
+          .replace("/*__INPUT__*/", inp))
+for ph in ("/*__VOCAB__*/", "/*__SCHEDULER__*/", "/*__INPUT__*/"):
+    assert ph not in out, ph + " not replaced"
 
 final = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
        + out.replace('<canvas id="cv">', '</head>\n<body>\n<canvas id="cv">', 1)

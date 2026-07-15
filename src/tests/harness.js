@@ -42,7 +42,9 @@ function boot(opts = {}){
     (vvListeners.resize || []).forEach(fn => fn());
   };
 
-  if (!window.matchMedia) window.matchMedia = () => ({ matches: false });
+  window.matchMedia = q => ({ matches: !!opts.touch && /pointer:\s*coarse/.test(q) });
+  if (!opts.touch){ try { delete window.ontouchstart; } catch(e){} }
+  else if (!("ontouchstart" in window)) window.ontouchstart = null;
   window.requestAnimationFrame = () => 0;
 
   let script = html.match(/<script>([\s\S]*)<\/script>/)[1];
@@ -52,6 +54,7 @@ function boot(opts = {}){
     update:(dt)=>update(dt), killZombie, renderTypebar, wordStat:(w)=>wordStat(profile,w),
     setMode:(m)=>{mode=m;}, layoutKB:()=>layoutKB(), groundY:()=>groundY(),
     routeChar: (typeof routeChar!=="undefined") ? routeChar : null,
+    useNativeKB: () => useNativeKB(), kbH: () => KB_H, nkiFocus: () => nkiFocus(),
     intro: () => (typeof G!=="undefined" ? G.intro : null) };`;
   window.eval(script);
 
