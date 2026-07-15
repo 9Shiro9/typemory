@@ -1561,10 +1561,11 @@ const seededShuffle = (arr, seed) => {           // stable order across sessions
   for (let i=a.length-1;i>0;i--){ const j = Math.floor(r()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 };
-// unlock order: short words first, stable pseudo-random tie-break
+// unlock order: stable seeded shuffle — all lengths mix in; per-wave length
+// weighting in pickWord() keeps early waves gentle without hiding long words
 const ORDERED = {};
 for (const [k,list] of Object.entries(PACKS)){
-  ORDERED[k] = seededShuffle(list, 1337).sort((a,b)=>a[0].length-b[0].length);
+  ORDERED[k] = seededShuffle(list, 1337);
 }
 const articleOf = w => { const m = w.match(/^(der|die|das)\s/); return m ? m[1] : null; };
 
@@ -1666,13 +1667,13 @@ function pickWord(){
   const onScreen = new Set(G.zombies.map(z=>z.g));
   const pool = activePool().filter(w=>!onScreen.has(w.g));
   if (!pool.length) return null;
-  const ideal = Math.min(4 + G.wave, 12);
+  const ideal = Math.min(5 + G.wave*1.5, 16);
   let total = 0;
   const weights = pool.map(w=>{
     const s = profile.words[w.g];
     let wt = 1 + (s ? s.e*2 + s.l*3 : 1.5);          // unseen words slightly favored
     if (s && s.m) wt *= .18;                          // mastered words retire
-    wt *= 1/(1+Math.abs(w.g.length-ideal)*.28);       // length ramps with wave
+    wt *= 1/(1+Math.abs(w.g.length-ideal)*.15);       // length ramps with wave (gently)
     total += wt; return wt;
   });
   let r = Math.random()*total;
@@ -1716,7 +1717,7 @@ function spawnZombie(boss){
 function newRun(){
   G.zombies=[]; G.bullets=[]; G.parts=[]; G.floats=[];
   G.wave=1; G.score=0; G.combo=0; G.hearts=5;
-  G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null; G.grace=null;
+  G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null; G.grace=null; G.suggest=null;
   G.keysOk=0; G.keysBad=0; G.chars=0; G.t0=performance.now(); G.masteredRun=0;
   G.weak={}; G.over=false;
   $("newwords").textContent="";
@@ -1929,8 +1930,23 @@ function renderTypebar(){
   const z = G.target;
   const tw=$("tword"), tm=$("tmean"), th=$("thint");
   if (!z || z.dead){
-    tw.innerHTML = `<span class="blank">${mode==="recall"?"…type to engage the nearest zombie":"…type the first letter of any word"}</span>`;
-    tm.textContent = ""; th.textContent="";
+    const s = G.suggest;
+    if (s && !s.dead){
+      // show the nearest threat as a suggestion — typing its first letter locks it
+      if (s.kind==="en"){
+        tw.innerHTML = `<span class="blank">${esc(s.g)}</span>`;
+        tm.textContent = "❓ nearest — type its meaning in English";
+      } else {
+        const vis = s.stage==="copy" || (s.stage==="flash" && !s.masked);
+        tw.innerHTML = `<span class="blank">${vis ? esc(s.g)
+          : [...s.g].map(c=>c===" "?"&nbsp;&nbsp;":"_").join("")}</span>`;
+        tm.textContent = s.e;
+      }
+      th.textContent = "▼ nearest zombie — or type any other's first letter";
+    } else {
+      tw.innerHTML = `<span class="blank">${mode==="recall"?"…type to engage the nearest zombie":"…type the first letter of any word"}</span>`;
+      tm.textContent = ""; th.textContent="";
+    }
     return;
   }
   if (z.kind==="en"){
@@ -2019,6 +2035,10 @@ function update(dt){
     for (const c of G.zombies) if(!c.dead && (!best||c.y>best.y)) best=c;
     if (best!==G.target){ G.target=best; renderTypebar(); }
   }
+  // suggested next threat: the lowest zombie, shown in the typebar when untargeted
+  let low=null;
+  for (const c of G.zombies) if(!c.dead && (!low||c.y>low.y)) low=c;
+  if (low!==G.suggest){ G.suggest=low; if(!G.target||G.target.dead) renderTypebar(); }
   // bullets
   for (const b of G.bullets){ b.t += dt*10; }
   G.bullets = G.bullets.filter(b=>b.t<1);
@@ -2135,7 +2155,18 @@ function drawZombie(z,t){
     const icon = z.stage==="copy"?"📖":z.stage==="flash"?"⚡":z.stage==="recall"?"🧠":"❓";
     ctx.font="13px serif"; ctx.fillText(icon, cx-wpx/2-pad-12, py);
   }
+  // health bar — width ∝ characters, drains letter by letter
+  const totalCh = z.kind==="en"
+    ? (z.answers.find(a=>a.startsWith(z.typed)) || z.answers[0]).length
+    : z.tokens.length;
+  const doneCh = z.kind==="en" ? z.typed.length : z.ti;
+  const frac = Math.max(0, 1 - doneCh/totalCh);
+  const bw = Math.min(14 + totalCh*5, 110), bh = 4;
+  ctx.fillStyle="rgba(6,8,4,.85)"; ctx.fillRect(-bw/2-1, 7, bw+2, bh+2);
+  ctx.fillStyle = frac>.6 ? "#8ee04a" : frac>.3 ? "#ffc857" : "#e5484d";
+  ctx.fillRect(-bw/2, 8, bw*frac, bh);
   if (isT){ ctx.fillStyle="#8ee04a"; ctx.font="10px system-ui"; ctx.fillText("▼", 0, -size-2); }
+  else if (G.suggest===z && !G.target){ ctx.fillStyle="#ffc857"; ctx.font="10px system-ui"; ctx.fillText("▼", 0, -size-2); }
   ctx.restore();
 }
 function roundRect(x,y,w,h,r){ ctx.beginPath();
