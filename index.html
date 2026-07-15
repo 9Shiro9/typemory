@@ -60,22 +60,22 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
 /* HUD */
 #hud{position:fixed;top:0;left:0;right:0;display:none;justify-content:space-between;
   align-items:center;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;z-index:10;
-  font-family:var(--mono);font-size:14px;
+  font-family:var(--mono);font-size:16px;
   background:linear-gradient(rgba(6,8,4,.85),transparent);pointer-events:none}
 #hud .grp{display:flex;gap:18px;align-items:center}
-#hearts{color:var(--red);letter-spacing:2px;font-size:16px}
+#hearts{color:var(--red);letter-spacing:2px;font-size:19px}
 #combo.hot{color:var(--amber)}
 #hud .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.1em}
 /* typing bar */
 #typebar{position:fixed;left:0;right:0;bottom:var(--kbh,0px);display:none;flex-direction:column;align-items:center;
   gap:4px;padding:10px 12px 14px;z-index:10;pointer-events:none;
   background:linear-gradient(transparent,rgba(6,8,4,.92) 40%)}
-#tword{font:700 clamp(20px,6vw,34px)/1 var(--mono);letter-spacing:.06em;min-height:34px}
+#tword{font:700 clamp(26px,7.5vw,40px)/1 var(--mono);letter-spacing:.06em;min-height:42px}
 #tword .done{color:var(--green)}
 #tword .todo{color:var(--bone)}
 #tword .blank{color:var(--dim)}
 #tword.err{animation:shake .18s}
-#tmean{font:400 15px var(--sans);color:var(--dim)}
+#tmean{font:500 17px var(--sans);color:var(--dim)}
 /* iPhone-style key preview: "u → ü" */
 #umbub{position:absolute;top:-34px;left:50%;transform:translate(-50%,8px) scale(.6);opacity:0;
   font:700 18px var(--mono);color:var(--bone);background:#1a2214;border:1px solid var(--amber);
@@ -84,7 +84,7 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
 #umbub b{color:var(--amber)}
 #umbub.show{opacity:1;transform:translate(-50%,0) scale(1)}
 @media(prefers-reduced-motion:reduce){#umbub{transition:opacity .12s}}
-#thint{font:400 11px var(--sans);color:#5a6350;text-transform:uppercase;letter-spacing:.1em}
+#thint{font:400 13px var(--sans);color:#5a6350;text-transform:uppercase;letter-spacing:.1em}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 #flash{position:fixed;inset:0;background:var(--red);opacity:0;pointer-events:none;z-index:15}
 /* on-screen keyboard */
@@ -92,12 +92,12 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
   padding:8px 5px calc(8px + env(safe-area-inset-bottom));background:rgba(10,13,8,.97);
   border-top:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
 #kb .krow{display:flex;gap:4px;justify-content:center}
-#kb .key{flex:1;max-width:42px;padding:11px 0;font:600 15px var(--mono);background:var(--panel2);
+#kb .key{flex:1;max-width:50px;padding:15px 0;font:700 19px var(--mono);background:var(--panel2);
   border:1px solid var(--line);border-radius:6px;color:var(--bone);text-align:center;cursor:pointer}
 #kb .key:active{background:var(--green);color:#0c0f0a;border-color:var(--green)}
 #kb .key.umlaut{color:var(--amber)}
 #kb .key.space{max-width:none;flex:4}
-#kb .key.fn{max-width:64px;flex:1.6;color:var(--dim)}
+#kb .key.fn{max-width:76px;flex:1.6;color:var(--dim)}
 @media(max-width:640px){.panel{padding:20px 18px}
   .overlay{padding:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))}}
 /* tables */
@@ -168,9 +168,13 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
 
     <h2>Mode</h2>
     <div class="row">
-      <button class="chip on" id="modeCopy">Copy — word shown, type it</button>
-      <button class="chip" id="modeRecall">Recall — only the meaning shows</button>
+      <button class="chip on" id="modeLearn">Learn — auto difficulty</button>
+      <button class="chip" id="modeCopy">Copy — word always shown</button>
+      <button class="chip" id="modeRecall">Recall — meaning only</button>
     </div>
+    <p class="mini" style="margin-top:6px">Learn levels each word up as you master it:
+      📖 word shown → ⚡ flashes, then vanishes mid-air → 🧠 meaning only →
+      ❓ surprise checks where you type the <i>meaning</i>. No more mindless copying.</p>
 
     <h2>Article colors — learn the gender by color</h2>
     <div class="legend">
@@ -1621,12 +1625,34 @@ function feed(z,k){
   if (z.buf === "" && z.grace && k === z.grace){ z.grace = null; return "part"; }
   return "bad";
 }
+/* meaning-check zombies: type the English meaning; any "/"-variant counts,
+   parenthetical qualifiers and the "to " verb prefix are optional */
+function meaningAnswers(e){
+  const base = e.replace(/\(.*?\)/g, " ");
+  const out = [];
+  for (let a of base.split("/")){
+    a = a.trim().toLowerCase().replace(/^to\s+/, "").replace(/[.!?']/g, "").replace(/\s+/g, " ").trim();
+    if (a && !out.includes(a)) out.push(a);
+  }
+  return out.length ? out : [e.toLowerCase()];
+}
+function feedEn(z,k){
+  const cand = z.typed + k;
+  let partial = false, complete = false;
+  for (const a of z.answers){
+    if (a === cand) complete = true;
+    else if (a.startsWith(cand)) partial = true;
+  }
+  if (complete){ z.typed = cand; z.done = true; return "ok"; }
+  if (partial){ z.typed = cand; return "part"; }
+  return "bad";
+}
 
 /* ---------- game state ---------- */
 let state = "menu";      // menu | play | pause | over
 let profile = null;
 let packsOn = {A1:true, A2:false};
-let mode = "copy";       // copy | recall
+let mode = "learn";      // learn | copy | recall
 const G = {};            // per-run state
 
 function activePool(){
@@ -1662,8 +1688,21 @@ const Z_EMO = ["🧟","🧟‍♂️","🧟‍♀️"];
 function spawnZombie(boss){
   const w = boss ? bossWord() : pickWord();
   if (!w) return;
+  // the mastery ladder: each word's stage comes from its own clean-kill streak
+  let stage = "copy";
+  if (mode === "recall") stage = "recall";
+  else if (mode === "learn" && !boss){
+    const s = profile.words[w.g], c = s ? s.c : 0;
+    if (s && s.m) stage = "check";
+    else if (c >= 4) stage = "recall";
+    else if (c >= 2) stage = "flash";
+  }
+  const kind = stage === "check" ? "en" : "de";
   const z = {
     g:w.g, e:w.e, pack:w.pack, tokens:makeTokens(w.g), ti:0, buf:"",
+    kind, stage, masked:false,
+    flashT: Math.min(2.5, Math.max(0.8, w.g.length*0.15)),
+    answers: kind==="en" ? meaningAnswers(w.e) : null, typed:"", done:false,
     x: 44 + Math.random()*(W-88), y: -34,
     v: (H*0.05 + G.wave*3.5 + Math.random()*12) * (boss?0.5:1),
     boss, emo: Z_EMO[Math.floor(Math.random()*Z_EMO.length)],
@@ -1696,10 +1735,18 @@ function killZombie(z){
   z.dead=1; sKill();
   const clean = z.err===0 && z.hint===0;
   const s = wordStat(profile, z.g);
-  s.k++; if (clean){ s.c++; if (s.c>=3 && !s.m){ s.m=1; G.masteredRun++; float(z.x,z.y-40,"GELERNT ✓","#ffc857",16);} }
-  else { s.c=0; G.weak[z.g]=z.e; }
+  s.k++;
+  if (z.kind === "en"){
+    // meaning check on a mastered word: failing it sends the word back down the ladder
+    if (!clean){ s.c=0; s.m=0; G.weak[z.g]=z.e; }
+  } else if (clean){
+    s.c++;
+    const need = mode==="learn" ? 6 : 3;   // in Learn, mastery = climbing the whole ladder
+    if (s.c>=need && !s.m){ s.m=1; G.masteredRun++; float(z.x,z.y-40,"GELERNT ✓","#ffc857",16); }
+  } else { s.c=0; G.weak[z.g]=z.e; }
+  const typedLen = z.kind==="en" ? z.typed.replace(/\s/g,"").length : z.g.replace(/\s/g,"").length;
   const mult = 1 + Math.min(G.combo,10)*.1;
-  const pts = Math.round(z.g.replace(/\s/g,"").length*10*mult*(z.boss?2:1));
+  const pts = Math.round(Math.max(typedLen,2)*10*mult*(z.boss?2:1));
   G.score += pts; G.combo++;
   if (G.combo>profile.bestCombo) profile.bestCombo=G.combo;
   float(z.x, z.y-20, "+"+pts, "#8ee04a", 15);
@@ -1762,20 +1809,31 @@ addEventListener("keydown", ev=>{
   if (state!=="play") return;
   ac();
   if (ev.key==="Tab"){ ev.preventDefault(); hint(); return; }
-  if (ev.key==="Backspace"){ if(G.target) G.target.buf=""; renderTypebar(); return; }
+  if (ev.key==="Backspace"){ if(G.target){ const t=G.target;
+    if (t.kind==="en") t.typed=t.typed.slice(0,-1); else t.buf=""; }
+    renderTypebar(); return; }
   if (ev.key.length!==1 || ev.metaKey || ev.ctrlKey || ev.altKey) return;
   ev.preventDefault();
   const k = ev.key.toLowerCase();
   handleKey(k);
 });
 function hint(){
-  if (mode!=="recall" || !G.target || G.target.dead) return;
-  const z=G.target; z.ti++; z.buf=""; z.hint++;
-  G.combo=0; G.score=Math.max(0,G.score-25);
+  const z = G.target;
+  if (!z || z.dead) return;
+  const hidden = z.stage==="recall" || z.stage==="check" || (z.stage==="flash" && z.masked);
+  if (!hidden) return;
+  z.hint++; G.combo=0; G.score=Math.max(0,G.score-25);
   float(z.x,z.y-20,"-25","#e5484d",13); sHit();
   const s=wordStat(profile,z.g); s.e++; s.c=0; G.weak[z.g]=z.e;
-  if (z.ti>=z.tokens.length) killZombie(z);
-  updateHUD(); renderTypebar();
+  if (z.kind==="en"){
+    const a = z.answers.find(a=>a.startsWith(z.typed)) || z.answers[0];
+    z.typed = a.slice(0, z.typed.length+1);
+    if (z.typed===a){ z.done=true; killZombie(z); } else renderTypebar();
+  } else {
+    z.ti++; z.buf="";
+    if (z.ti>=z.tokens.length) killZombie(z); else renderTypebar();
+  }
+  updateHUD();
 }
 function handleKey(k){
   // swallow a digraph tail (tuer/fuss habit) typed right after a word ended on a base-letter umlaut
@@ -1790,19 +1848,22 @@ function handleKey(k){
     let best=null;
     for (const c of G.zombies){
       if (c.dead) continue;
-      const probe={tokens:c.tokens,ti:c.ti,buf:c.buf};
-      if (feed(probe,k)!=="bad" && (!best || c.y>best.y)) best=c;
+      const ok = c.kind==="en"
+        ? feedEn({answers:c.answers, typed:c.typed}, k) !== "bad"
+        : feed({tokens:c.tokens, ti:c.ti, buf:c.buf}, k) !== "bad";
+      if (ok && (!best || c.y>best.y)) best=c;
     }
     if (!best){ miss(); return; }
     z = G.target = best;
   }
-  const r = feed(z,k);
+  const r = z.kind==="en" ? feedEn(z,k) : feed(z,k);
   if (r==="bad"){ miss(z); return; }
   G.keysOk++; G.chars++;
   if (r==="ok" && z.umlaut){ umBubble(BASE[z.umlaut], z.umlaut); z.umlaut=null; }
   sShoot();
   G.bullets.push({x:W/2,y:groundY()-42,tx:z.x,ty:z.y,t:0});
-  if (z.ti>=z.tokens.length){ G.grace = z.grace || null; killZombie(z); }
+  const complete = z.kind==="en" ? z.done : z.ti>=z.tokens.length;
+  if (complete){ G.grace = z.kind==="en" ? null : (z.grace || null); killZombie(z); }
   else renderTypebar();
 }
 function miss(z){
@@ -1832,7 +1893,9 @@ function buildKB(){
       b.addEventListener("pointerdown", ev=>{
         ev.preventDefault(); ac();
         if (state!=="play") return;
-        if (k==="back"){ if(G.target){G.target.buf="";} renderTypebar(); }
+        if (k==="back"){ if(G.target){ const t=G.target;
+            if (t.kind==="en") t.typed=t.typed.slice(0,-1); else t.buf=""; }
+          renderTypebar(); }
         else if (k==="hint") hint();
         else handleKey(k);
       });
@@ -1859,7 +1922,7 @@ function updateHUD(){
   $("combo").textContent = G.combo>1 ? "×"+(1+Math.min(G.combo,10)*.1).toFixed(1)+" combo "+G.combo : "";
   $("combo").className = G.combo>=5 ? "hot":"";
   $("runinfo").textContent = profile.name+" · "+Object.keys(packsOn).filter(k=>packsOn[k]).join("+")
-    +" · "+(mode==="copy"?"Copy":"Recall");
+    +" · "+{learn:"Learn",copy:"Copy",recall:"Recall"}[mode];
 }
 function renderTypebar(){
   const z = G.target;
@@ -1869,16 +1932,27 @@ function renderTypebar(){
     tm.textContent = ""; th.textContent="";
     return;
   }
+  if (z.kind==="en"){
+    const a = z.answers.find(a=>a.startsWith(z.typed)) || z.answers[0];
+    const blanks = [...a.slice(z.typed.length)].map(c=>c===" "?"&nbsp;&nbsp;":"_").join("");
+    tw.innerHTML = `<span class="done">${esc(z.typed)}</span><span class="blank">${blanks}</span>`;
+    tm.textContent = `${z.g} — type the meaning in English`;
+    th.textContent = "❓ meaning check · Tab reveals a letter (−25)";
+    return;
+  }
   const done = [...z.g].slice(0,z.ti).join("");
   const todo = [...z.g].slice(z.ti).join("");
-  if (mode==="copy"){
+  const visible = z.stage==="copy" || (z.stage==="flash" && !z.masked);
+  if (visible){
     tw.innerHTML = `<span class="done">${esc(done)}</span><span class="todo">${esc(todo)}</span>`;
   } else {
     const blanks = [...todo].map(c=>c===" "?"&nbsp;&nbsp;":"_").join("");
     tw.innerHTML = `<span class="done">${esc(done)}</span><span class="blank">${blanks}</span>`;
   }
   tm.textContent = z.e;
-  th.textContent = mode==="recall" ? "Tab reveals a letter (−25)" : (z.buf?`typing "${z.buf}…" for ${z.g[z.ti]}`:"");
+  th.textContent = z.stage==="flash" ? (z.masked ? "⚡ from memory now!" : "⚡ memorize it — it vanishes soon")
+    : !visible ? "🧠 Tab reveals a letter (−25)"
+    : (z.buf ? `typing "${z.buf}…" for ${z.g[z.ti]}` : "");
 }
 const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
 let bubT = 0;
@@ -1931,6 +2005,10 @@ function update(dt){
   for (const z of G.zombies){
     if (z.dead){ z.dead+=dt*2; continue; }
     z.y += z.v*dt; z.bob += dt*6; z.angry=Math.max(0,z.angry-dt);
+    if (z.stage==="flash" && !z.masked && z.y > 10){
+      z.flashT -= dt;
+      if (z.flashT <= 0){ z.masked = true; if (G.target===z) renderTypebar(); }
+    }
     if (z.y > groundY()-30){ z.dead=1; loseHeart(z); if(G.target===z){G.target=null;renderTypebar();} }
   }
   G.zombies = G.zombies.filter(z=>!z.dead || z.dead<1.6);
@@ -2009,11 +2087,12 @@ function drawZombie(z,t){
   const isT = G.target===z;
   // word pill
   const done=[...z.g].slice(0,z.ti).join(""), todo=[...z.g].slice(z.ti).join("");
-  const fs = z.boss?17:14;
+  const fs = z.boss?21:17;
   ctx.font=`700 ${fs}px ui-monospace,Menlo,monospace`;
-  const showWord = mode==="copy" || z.ti>0 || isT;
+  const visible = z.kind!=="en" && (z.stage==="copy" || (z.stage==="flash" && !z.masked));
   let label;
-  if (mode==="copy") label = z.g;
+  if (z.kind==="en") label = z.g;                    // the German word IS the prompt
+  else if (visible) label = z.g;
   else label = done + [...todo].map(c=>c===" "?" ":"_").join("");
   const wpx = ctx.measureText(label).width;
   const pad=8, ph=fs+10, py=-size-(z.boss?26:18);
@@ -2026,23 +2105,35 @@ function drawZombie(z,t){
   const art = articleOf(z.g);
   let x = cx-wpx/2;
   ctx.textAlign="left";
-  const donePart = mode==="copy" ? done : done;
-  const restPart = mode==="copy" ? todo : [...todo].map(c=>c===" "?" ":"_").join("");
-  ctx.fillStyle="#8ee04a"; ctx.fillText(donePart,x,py); x+=ctx.measureText(donePart).width;
-  if (art && z.ti < art.length+1 && mode==="copy"){
-    // color the untyped part of the article
-    const artRest = (art+" ").slice(z.ti);
-    ctx.fillStyle=ART_COLOR[art]; ctx.fillText(artRest,x,py); x+=ctx.measureText(artRest).width;
-    const rest2 = restPart.slice(artRest.length);
-    ctx.fillStyle="#e8e6d9"; ctx.fillText(rest2,x,py);
+  if (z.kind==="en"){
+    // prompt word, article colored — the player answers in English via the typebar
+    if (art){
+      ctx.fillStyle=ART_COLOR[art]; ctx.fillText(art+" ",x,py); x+=ctx.measureText(art+" ").width;
+      ctx.fillStyle="#e8e6d9"; ctx.fillText(z.g.slice(art.length+1),x,py);
+    } else { ctx.fillStyle="#e8e6d9"; ctx.fillText(label,x,py); }
   } else {
-    ctx.fillStyle = mode==="copy" ? "#e8e6d9" : "#98a087";
-    ctx.fillText(restPart,x,py);
+    const restPart = visible ? todo : [...todo].map(c=>c===" "?" ":"_").join("");
+    ctx.fillStyle="#8ee04a"; ctx.fillText(done,x,py); x+=ctx.measureText(done).width;
+    if (art && z.ti < art.length+1 && visible){
+      // color the untyped part of the article
+      const artRest = (art+" ").slice(z.ti);
+      ctx.fillStyle=ART_COLOR[art]; ctx.fillText(artRest,x,py); x+=ctx.measureText(artRest).width;
+      const rest2 = restPart.slice(artRest.length);
+      ctx.fillStyle="#e8e6d9"; ctx.fillText(rest2,x,py);
+    } else {
+      ctx.fillStyle = visible ? "#e8e6d9" : "#98a087";
+      ctx.fillText(restPart,x,py);
+    }
   }
-  // meaning
-  ctx.textAlign="center"; ctx.font=`400 ${z.boss?13:11}px system-ui,sans-serif`;
-  ctx.fillStyle="rgba(152,160,135,.9)";
-  ctx.fillText(z.e, cx, py+14);
+  // meaning line (for meaning checks it's the task, not the answer)
+  ctx.textAlign="center"; ctx.font=`500 ${z.boss?15:13}px system-ui,sans-serif`;
+  ctx.fillStyle = z.kind==="en" ? "rgba(255,200,87,.95)" : "rgba(152,160,135,.9)";
+  ctx.fillText(z.kind==="en" ? "❓ type the meaning" : z.e, cx, py+14);
+  // ladder stage icon
+  if (mode==="learn" && !z.boss){
+    const icon = z.stage==="copy"?"📖":z.stage==="flash"?"⚡":z.stage==="recall"?"🧠":"❓";
+    ctx.font="13px serif"; ctx.fillText(icon, cx-wpx/2-pad-12, py);
+  }
   if (isT){ ctx.fillStyle="#8ee04a"; ctx.font="10px system-ui"; ctx.fillText("▼", 0, -size-2); }
   ctx.restore();
 }
@@ -2076,12 +2167,14 @@ $("paddbtn").onclick=addProfile;
 function syncMenu(){
   $("packA1").classList.toggle("on",packsOn.A1);
   $("packA2").classList.toggle("on",packsOn.A2);
+  $("modeLearn").classList.toggle("on",mode==="learn");
   $("modeCopy").classList.toggle("on",mode==="copy");
   $("modeRecall").classList.toggle("on",mode==="recall");
   $("soundbtn").textContent = soundOn?"🔊 Sound on":"🔇 Sound off";
 }
 $("packA1").onclick=()=>{ packsOn.A1=!packsOn.A1; if(!packsOn.A1&&!packsOn.A2)packsOn.A2=true; syncMenu(); };
 $("packA2").onclick=()=>{ packsOn.A2=!packsOn.A2; if(!packsOn.A1&&!packsOn.A2)packsOn.A1=true; syncMenu(); };
+$("modeLearn").onclick=()=>{ mode="learn"; syncMenu(); };
 $("modeCopy").onclick=()=>{ mode="copy"; syncMenu(); };
 $("modeRecall").onclick=()=>{ mode="recall"; syncMenu(); };
 $("soundbtn").onclick=()=>{ soundOn=!soundOn; if(profile){profile.sound=soundOn;save();} syncMenu(); };
