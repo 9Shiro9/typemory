@@ -307,6 +307,30 @@ const sShoot=()=>tone(900,500,.05,"square",.03), sHit=()=>tone(240,180,.04,"tria
   sHurt=()=>tone(110,55,.3,"sawtooth",.1),
   sOver=()=>{tone(440,110,.7,"sawtooth",.08);};
 
+/* ---------- German voice (built-in TTS; silent if no de-* voice) ---------- */
+let deVoice = null;
+function initVoice(){
+  if (!("speechSynthesis" in window) || !window.speechSynthesis) return;
+  const pick = () => {
+    try {
+      const vs = speechSynthesis.getVoices() || [];
+      deVoice = vs.find(v => v.lang && v.lang.toLowerCase().startsWith("de")) || null;
+    } catch(e){}
+  };
+  pick();
+  try { speechSynthesis.onvoiceschanged = pick; } catch(e){}
+}
+initVoice();
+function sayDe(text){
+  if (!soundOn || !deVoice) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = deVoice; u.lang = deVoice.lang; u.rate = 0.95;
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+
 /* ---------- typing tokens (umlaut-friendly) ----------
    ü accepts ü / ue / u  (same pattern for ä ö, ß accepts ß / ss / s).
    When the bare base letter completes an umlaut, a "grace" letter is armed so a
@@ -437,7 +461,7 @@ function loseHeart(z){
   if (G.hearts<=0) gameOver();
 }
 function killZombie(z){
-  z.dead=1; sKill();
+  z.dead=1; sKill(); sayDe(z.g);
   const clean = z.err===0 && z.hint===0;
   const s = wordStat(profile, z.g);
   s.k++;
