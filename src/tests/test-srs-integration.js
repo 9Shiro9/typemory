@@ -5,7 +5,7 @@ const ok = (c, m) => { if (!c){ fails++; console.log("FAIL " + m); } };
 
 const h = boot();
 h.newProfile("Tester");
-h.click("startbtn");
+h.click("startbtn"); h.finishIntro();
 const t = h.t;
 
 // kill a word cleanly → interval starts, lastSeen set, daily counter bumps
@@ -31,7 +31,7 @@ ok(h.$("duecount").textContent.includes("1 words due"),
    `menu shows due count ("${h.$("duecount").textContent}")`);
 
 // due words dominate spawning
-h.click("startbtn");
+h.click("startbtn"); h.finishIntro();
 let dueHits = 0;
 for (let i = 0; i < 60; i++){
   const w = t.pickWord();

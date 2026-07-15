@@ -60,6 +60,13 @@ function boot(opts = {}){
     click: id => $(id).onclick && $(id).onclick(),
     t: window.__t,
     newProfile(name){ $("pname").value = name; $("paddbtn").onclick(); },
+    finishIntro(){
+      const t = window.__t;
+      while (t.G.intro){
+        const w = t.G.intro.list[t.G.intro.idx].g;
+        for (const ch of w.toLowerCase()) t.routeChar(ch);
+      }
+    },
     typeWord(z, word){    // drive handleKey through a full word
       window.__t.G.target = z;
       for (const ch of word.toLowerCase()) window.__t.handleKey(ch);

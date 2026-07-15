@@ -7,7 +7,7 @@ const ok = (c, m) => { if (!c){ fails++; console.log("FAIL " + m); } };
 {
   const h = boot();
   h.newProfile("A");
-  h.click("startbtn");
+  h.click("startbtn"); h.finishIntro();
   h.t.spawnZombie(false);
   const z = h.t.G.zombies[0];
   h.typeWord(z, z.g);
@@ -19,7 +19,7 @@ const ok = (c, m) => { if (!c){ fails++; console.log("FAIL " + m); } };
   const h = boot();
   h.newProfile("B");
   h.click("soundbtn");           // toggle off
-  h.click("startbtn");
+  h.click("startbtn"); h.finishIntro();
   h.t.spawnZombie(false);
   const z = h.t.G.zombies[0];
   h.typeWord(z, z.g);
@@ -30,7 +30,7 @@ const ok = (c, m) => { if (!c){ fails++; console.log("FAIL " + m); } };
 {
   const h = boot({ noGermanVoice: true });
   h.newProfile("C");
-  h.click("startbtn");
+  h.click("startbtn"); h.finishIntro();
   h.t.spawnZombie(false);
   const z = h.t.G.zombies[0];
   h.typeWord(z, z.g);
