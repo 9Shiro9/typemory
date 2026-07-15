@@ -9,6 +9,7 @@
     "@capacitor/core": "^7"
   },
   "devDependencies": {
-    "@capacitor/assets": "^3"
+    "@capacitor/assets": "^3",
+    "jsdom": "^29.1.1"
   }
 }
