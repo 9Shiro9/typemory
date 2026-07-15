@@ -1951,19 +1951,28 @@ function gameOver(){
   profile.games++; profile.keysOk+=G.keysOk; profile.keysBad+=G.keysBad;
   if (G.score>profile.highScore) profile.highScore=G.score;
   if (G.wave>profile.bestWave) profile.bestWave=G.wave;
-  const today = new Date().toISOString().slice(0,10);
+  // streak requires the daily goal (words reviewed/learned today), not mere playing
+  const DAILY_GOAL = 20;
+  const nowMs = Date.now();
+  const tk = dayKey(nowMs);
+  const d = (profile.day && profile.day.d === tk) ? profile.day : {d:tk, nw:0, rev:0};
+  const doneToday = d.nw + d.rev;
   const st = profile.streak;
-  if (st.last!==today){
-    const y = new Date(Date.now()-864e5).toISOString().slice(0,10);
-    st.count = (st.last===y) ? st.count+1 : 1; st.last=today;
+  const today = tk;
+  if (doneToday >= DAILY_GOAL && st.last !== tk){
+    const y = dayKey(nowMs - DAY_MS);
+    st.count = (st.last === y) ? st.count + 1 : 1; st.last = tk;
   }
   profile.runs.push({d:today,score:G.score,wave:G.wave,wpm,acc,mode,
     packs:Object.keys(packsOn).filter(k=>packsOn[k]).join("+")});
   if (profile.runs.length>60) profile.runs.shift();
   save();
+  const dueTom = srsDueTomorrowCount(profile.words, nowMs);
   $("overstats").innerHTML =
     stat(G.score,"score")+stat(G.wave,"wave")+stat(wpm,"wpm")+stat(acc+"%","accuracy")+
-    stat(G.masteredRun,"words mastered")+stat("🔥"+st.count,"day streak");
+    stat(d.nw,"new words today")+stat(d.rev,"reviewed today")+
+    stat(dueTom,"due tomorrow")+
+    stat("🔥"+st.count, "streak · goal "+Math.min(doneToday,DAILY_GOAL)+"/"+DAILY_GOAL);
   const weak = Object.entries(G.weak).slice(0,10);
   $("overweak").innerHTML = weak.length
     ? "<h2>Words that almost got you — review these</h2>"+

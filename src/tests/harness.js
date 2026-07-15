@@ -48,6 +48,7 @@ function boot(opts = {}){
   let script = html.match(/<script>([\s\S]*)<\/script>/)[1];
   script += `\nwindow.__t = { G, profile:()=>profile, spawnZombie, pickWord, handleKey,
     makeTokens, feed, feedEn, meaningAnswers, VOCAB, VOCAB_A2,
+    activePool: () => activePool(),
     update:(dt)=>update(dt), killZombie, renderTypebar, wordStat:(w)=>wordStat(profile,w),
     setMode:(m)=>{mode=m;}, layoutKB:()=>layoutKB(), groundY:()=>groundY(),
     routeChar: (typeof routeChar!=="undefined") ? routeChar : null,
