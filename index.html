@@ -65,6 +65,14 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
 #tword .blank{color:var(--dim)}
 #tword.err{animation:shake .18s}
 #tmean{font:400 15px var(--sans);color:var(--dim)}
+/* iPhone-style key preview: "u → ü" */
+#umbub{position:absolute;top:-34px;left:50%;transform:translate(-50%,8px) scale(.6);opacity:0;
+  font:700 18px var(--mono);color:var(--bone);background:#1a2214;border:1px solid var(--amber);
+  border-radius:8px;padding:6px 14px;pointer-events:none;white-space:nowrap;
+  transition:opacity .12s,transform .12s;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+#umbub b{color:var(--amber)}
+#umbub.show{opacity:1;transform:translate(-50%,0) scale(1)}
+@media(prefers-reduced-motion:reduce){#umbub{transition:opacity .12s}}
 #thint{font:400 11px var(--sans);color:#5a6350;text-transform:uppercase;letter-spacing:.1em}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 #flash{position:fixed;inset:0;background:var(--red);opacity:0;pointer-events:none;z-index:15}
@@ -118,6 +126,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
 </div>
 
 <div id="typebar">
+  <div id="umbub"></div>
   <div id="tword"></div>
   <div id="tmean"></div>
   <div id="thint"></div>
@@ -163,7 +172,8 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
     <p class="help">
       Zombies fall from the sky — just type and the lowest zombie whose word starts with
       that letter gets targeted. On a phone, use the on-screen keys.
-      <kbd>ä ö ü ß</kbd> can be typed as <kbd>ae oe ue ss</kbd> ·
+      No German keyboard needed: for <kbd>ä ö ü ß</kbd> just type <kbd>a o u s</kbd>
+      (<kbd>ae oe ue ss</kbd> work too) ·
       <kbd>Tab</kbd>/<kbd>💡</kbd> reveals a letter in Recall (costs points) ·
       <kbd>Esc</kbd>/<kbd>⏸</kbd> pause · Mistakes make the zombie <i>faster</i>. Let 5 through and you're bitten.
     </p>
@@ -1560,15 +1570,27 @@ const sShoot=()=>tone(900,500,.05,"square",.03), sHit=()=>tone(240,180,.04,"tria
   sHurt=()=>tone(110,55,.3,"sawtooth",.1),
   sOver=()=>{tone(440,110,.7,"sawtooth",.08);};
 
-/* ---------- typing tokens (umlaut-friendly) ---------- */
-const ALT = {"ä":["ä","ae"],"ö":["ö","oe"],"ü":["ü","ue"],"ß":["ß","ss"]};
-const makeTokens = word => [...word.toLowerCase()].map(c => ALT[c] || [c]);
+/* ---------- typing tokens (umlaut-friendly) ----------
+   ü accepts ü / ue / u  (same pattern for ä ö, ß accepts ß / ss / s).
+   When the bare base letter completes an umlaut, a "grace" letter is armed so a
+   habitual digraph typist's trailing e (or second s) is swallowed, not an error. */
+const ALT  = {"ä":["ä","ae","a"],"ö":["ö","oe","o"],"ü":["ü","ue","u"],"ß":["ß","ss","s"]};
+const BASE = {"ä":"a","ö":"o","ü":"u","ß":"s"};
+const makeTokens = word => [...word.toLowerCase()].map(c => ({alts: ALT[c] || [c], ch: c}));
 function feed(z,k){
-  const alts = z.tokens[z.ti], cand = z.buf + k;
-  let partial = false;
-  for (const a of alts){ if (a === cand) { z.ti++; z.buf=""; return "ok"; }
+  const t = z.tokens[z.ti], cand = z.buf + k;
+  if (!t) return "bad";
+  let partial = false, hit = null;
+  for (const a of t.alts){ if (a === cand){ hit = a; break; }
     if (a.startsWith(cand)) partial = true; }
-  if (partial){ z.buf = cand; return "part"; }
+  if (hit !== null){
+    z.ti++; z.buf="";
+    z.umlaut = (BASE[t.ch] && hit === BASE[t.ch]) ? t.ch : null;
+    z.grace  = z.umlaut ? (t.ch === "ß" ? "s" : "e") : null;
+    return "ok";
+  }
+  if (partial){ z.grace = null; z.buf = cand; return "part"; }
+  if (z.buf === "" && z.grace && k === z.grace){ z.grace = null; return "part"; }
   return "bad";
 }
 
@@ -1626,7 +1648,7 @@ function spawnZombie(boss){
 function newRun(){
   G.zombies=[]; G.bullets=[]; G.parts=[]; G.floats=[];
   G.wave=1; G.score=0; G.combo=0; G.hearts=5;
-  G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null;
+  G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null; G.grace=null;
   G.keysOk=0; G.keysBad=0; G.chars=0; G.t0=performance.now(); G.masteredRun=0;
   G.weak={}; G.over=false;
   $("newwords").textContent="";
@@ -1728,6 +1750,11 @@ function hint(){
   updateHUD(); renderTypebar();
 }
 function handleKey(k){
+  // swallow a digraph tail (tuer/fuss habit) typed right after a word ended on a base-letter umlaut
+  if (G.grace && !G.target){
+    const g = G.grace; G.grace = null;
+    if (k === g){ G.keysOk++; return; }
+  } else G.grace = null;
   let z = G.target;
   if (z && z.dead) z = G.target = null;
   if (!z){
@@ -1744,9 +1771,10 @@ function handleKey(k){
   const r = feed(z,k);
   if (r==="bad"){ miss(z); return; }
   G.keysOk++; G.chars++;
+  if (r==="ok" && z.umlaut){ umBubble(BASE[z.umlaut], z.umlaut); z.umlaut=null; }
   sShoot();
   G.bullets.push({x:W/2,y:groundY()-42,tx:z.x,ty:z.y,t:0});
-  if (z.ti>=z.tokens.length) killZombie(z);
+  if (z.ti>=z.tokens.length){ G.grace = z.grace || null; killZombie(z); }
   else renderTypebar();
 }
 function miss(z){
@@ -1825,6 +1853,13 @@ function renderTypebar(){
   th.textContent = mode==="recall" ? "Tab reveals a letter (−25)" : (z.buf?`typing "${z.buf}…" for ${z.g[z.ti]}`:"");
 }
 const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+let bubT = 0;
+function umBubble(base,um){
+  const b = $("umbub");
+  b.innerHTML = `${esc(base)} → <b>${esc(um)}</b>`;
+  b.classList.add("show");
+  clearTimeout(bubT); bubT = setTimeout(()=>b.classList.remove("show"), 800);
+}
 
 /* ---------- update & draw ---------- */
 let last=0, rafId=0;
