@@ -108,6 +108,27 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
   font-size:16px;background:transparent;color:transparent;caret-color:transparent;z-index:1}
 #hintbtn{pointer-events:auto;position:absolute;right:10px;top:-4px;padding:6px 12px;
   font-size:17px;display:none}
+/* boss banner */
+#bossbanner{position:fixed;top:26%;left:50%;transform:translate(-50%,-50%) scale(.6);
+  z-index:14;text-align:center;pointer-events:none;opacity:0;display:flex;
+  flex-direction:column;gap:4px}
+#bossbanner em{font:800 13px var(--sans);letter-spacing:.4em;text-transform:uppercase;
+  color:var(--red);font-style:normal}
+#bossbanner b{font:400 clamp(30px,7vw,52px) var(--display);color:var(--bone);
+  text-shadow:0 0 24px rgba(229,72,77,.6)}
+#bossbanner.show{animation:bossslam 2.2s ease-out forwards}
+@keyframes bossslam{0%{opacity:0;transform:translate(-50%,-50%) scale(1.9)}
+  12%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  80%{opacity:1}100%{opacity:0;transform:translate(-50%,-56%) scale(.98)}}
+@media(prefers-reduced-motion:reduce){
+  #bossbanner.show{animation:none;opacity:1}
+}
+/* torch flicker on the menu hero */
+.mhead h1{animation:torch 3.4s infinite}
+@keyframes torch{0%,100%{text-shadow:0 0 18px rgba(229,72,77,.45),0 2px 0 #000}
+  45%{text-shadow:0 0 26px rgba(255,200,87,.35),0 2px 0 #000}
+  55%{text-shadow:0 0 14px rgba(229,72,77,.5),0 2px 0 #000}}
+@media(prefers-reduced-motion:reduce){.mhead h1{animation:none}}
 /* achievements */
 #achtoast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;
   transform:translate(-50%,-90px);z-index:30;background:var(--panel2);
@@ -364,6 +385,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
 </div>
 
 <div id="achtoast"></div>
+<div id="bossbanner"><em>Der Endgegner</em><b id="bossword"></b></div>
 
 <!-- TROPHIES -->
 <div id="trophies" class="overlay hidden">
@@ -1834,8 +1856,15 @@ function zombieSpeed(fieldH, wave, diffMult, rand){
   return (fieldH / tt) * (diffMult || 1);
 }
 
+/* low-health tension: 0 = fine, 1 = danger (≤2 hearts), 2 = critical (1 heart) */
+function tensionLevel(hearts){
+  if (hearts <= 1) return 2;
+  if (hearts <= 2) return 1;
+  return 0;
+}
+
 if (typeof module !== "undefined" && module.exports){
-  module.exports = { walkFrame, bossFrame, hitstopScale, corpseAlpha, CORPSE_TTL, zombieSpeed };
+  module.exports = { walkFrame, bossFrame, hitstopScale, corpseAlpha, CORPSE_TTL, zombieSpeed, tensionLevel };
 }
 
 /* Achievements — pure rules over a stats snapshot.
@@ -2035,6 +2064,30 @@ function playSfx(n, o){
   } catch(e){}
 }
 let lastGroan = -1e9;
+function sHeart(){
+  tone(65,42,.11,"sine",.13);
+  setTimeout(()=>tone(52,38,.09,"sine",.10), 130);
+}
+/* ambient menu drone: two detuned lows + slow swell — zero asset bytes */
+let droneNodes = null;
+function droneStart(){
+  if (droneNodes || !soundOn || reduceMotion || !AC) return;
+  try {
+    const g = AC.createGain(); g.gain.value = 0.016; g.connect(AC.destination);
+    const o1 = AC.createOscillator(); o1.type = "triangle"; o1.frequency.value = 55;
+    const o2 = AC.createOscillator(); o2.type = "triangle"; o2.frequency.value = 55.7;
+    const lfo = AC.createOscillator(); lfo.frequency.value = 0.11;
+    const lg = AC.createGain(); lg.gain.value = 0.009;
+    lfo.connect(lg); lg.connect(g.gain);
+    o1.connect(g); o2.connect(g); o1.start(); o2.start(); lfo.start();
+    droneNodes = { g, o1, o2, lfo };
+  } catch(e){}
+}
+function droneStop(){
+  if (!droneNodes) return;
+  try { droneNodes.o1.stop(); droneNodes.o2.stop(); droneNodes.lfo.stop(); droneNodes.g.disconnect(); } catch(e){}
+  droneNodes = null;
+}
 function groan(){
   const t = performance.now();
   if (t - lastGroan < 1400) return;
@@ -2217,7 +2270,17 @@ function spawnZombie(boss){
     bob: Math.random()*6.28, err:0, hint:0, angry:0, dead:0
   };
   G.zombies.push(z);
-  groan();
+  if (boss){
+    G.bossFx = { t: 0 };
+    const art = articleOf(z.g);
+    $("bossword").innerHTML = art
+      ? `<span style="color:${ART_COLOR[art]}">${art}</span> ${esc(z.g.slice(art.length+1))}`
+      : esc(z.g);
+    const bb = $("bossbanner");
+    bb.classList.remove("show"); void bb.offsetWidth;
+    bb.classList.add("show");
+    playSfx(GROANS[Math.floor(Math.random()*GROANS.length)], { rate: 0.5, gain: 0.55 });
+  } else groan();
 }
 
 /* ---------- run ---------- */
@@ -2228,6 +2291,8 @@ function newRun(){
   G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null; G.grace=null; G.suggest=null;
   G.keysOk=0; G.keysBad=0; G.chars=0; G.t0=performance.now(); G.masteredRun=0;
   G.weak={}; G.over=false; G.intro=null; G.killStreak=0;
+  G.waveKills=0; G.waveOk0=0; G.waveBad0=0; G.beatT=0; G.bossFx=null;
+  $("bossbanner").classList.remove("show");
   $("newwords").textContent="";
   updateHUD(); renderTypebar();
   startIntro(pendingIntro(5));
@@ -2249,6 +2314,73 @@ function makeProps(){
   }
   return out;
 }
+/* ---------- living menu ambience (never runs during play) ---------- */
+const MENU_FX = { running:false, fog:[], shambler:null, nextShamble:4, raf:0, last:0 };
+function menuStart(){
+  if (MENU_FX.running || reduceMotion || state !== "menu") return;
+  MENU_FX.running = true; MENU_FX.last = 0;
+  MENU_FX.fog = []; MENU_FX.shambler = null;
+  MENU_FX.nextShamble = 3 + Math.random()*6;
+  MENU_FX.raf = requestAnimationFrame(menuLoop);
+}
+function menuStop(){
+  MENU_FX.running = false;
+  try { cancelAnimationFrame(MENU_FX.raf); } catch(e){}
+  droneStop();
+}
+function menuLoop(ts){
+  if (!MENU_FX.running || state !== "menu"){ menuStop(); return; }
+  MENU_FX.raf = requestAnimationFrame(menuLoop);
+  if (!ts) ts = performance.now();
+  const dt = Math.min((ts - (MENU_FX.last || ts))/1000, .05); MENU_FX.last = ts;
+  if (!droneNodes && AC && soundOn) droneStart();
+  if (droneNodes && !soundOn) droneStop();
+  if (ASSET.ok && MENU_FX.fog.length < 7 && Math.random() < dt*0.8)
+    MENU_FX.fog.push({ img: ASSET.tinted[Math.random()<.5?"fx_smoke_g":"fx_smoke2_g"],
+      x:-90, y: H*(0.12+Math.random()*0.72), v: 10+Math.random()*20,
+      sc: 1.4+Math.random()*2.4, a: .04+Math.random()*.07 });
+  for (const f of MENU_FX.fog) f.x += f.v*dt;
+  MENU_FX.fog = MENU_FX.fog.filter(f => f.x < W+160);
+  MENU_FX.nextShamble -= dt;
+  if (!MENU_FX.shambler && MENU_FX.nextShamble <= 0 && ASSET.ok){
+    const dir = Math.random() < .5 ? 1 : -1;
+    MENU_FX.shambler = { x: dir>0 ? -60 : W+60, dir, t:0,
+      skin: ["zombie","bloody","rotting","headless"][Math.floor(Math.random()*4)] };
+  }
+  const sh = MENU_FX.shambler;
+  if (sh){
+    sh.x += sh.dir * 24 * dt; sh.t += dt;
+    if (sh.x < -80 || sh.x > W+80){ MENU_FX.shambler = null; MENU_FX.nextShamble = 8 + Math.random()*7; }
+  }
+  drawMenuScene();
+}
+function drawMenuScene(){
+  ctx.clearRect(0,0,W,H);
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,"#0a0d12"); sky.addColorStop(.55,"#10150c"); sky.addColorStop(1,"#0c0f0a");
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="rgba(232,230,217,.8)"; ctx.beginPath(); ctx.arc(W*.84,H*.09,28,0,6.29); ctx.fill();
+  ctx.fillStyle="#0a0d12"; ctx.beginPath(); ctx.arc(W*.84+10,H*.09-7,25,0,6.29); ctx.fill();
+  if (!G.props) G.props = makeProps();
+  drawProps(H-60);
+  const sh = MENU_FX.shambler;
+  if (sh && ASSET.ok){
+    const sheet = ASSET.img[sh.skin];
+    if (sheet){
+      const row = sh.dir > 0 ? 2 : 1;          // E row walks right, W row walks left
+      const fr = walkFrame(sh.t, 4);
+      ctx.drawImage(sheet, fr*48, row*64, 48, 64, sh.x-22, H*0.84-58, 44, 58);
+    }
+  }
+  for (const f of MENU_FX.fog){
+    if (!f.img) continue;
+    ctx.save(); ctx.globalAlpha = f.a;
+    const w = f.img.width*f.sc, h2 = f.img.height*f.sc;
+    ctx.drawImage(f.img, f.x-w/2, f.y-h2/2, w, h2);
+    ctx.restore();
+  }
+}
+
 function drawProps(gy){
   const im = ASSET.img.grave;
   if (!im || !G.props) return;
@@ -2288,6 +2420,7 @@ function killZombie(z){
     const need = mode==="learn" ? 6 : 3;   // in Learn, mastery = climbing the whole ladder
     if (s.c>=need && !s.m){ s.m=1; G.masteredRun++; float(z.x,z.y-40,"GELERNT ✓","#ffc857",16); }
   } else { s.c=0; G.weak[z.g]=z.e; }
+  G.waveKills = (G.waveKills || 0) + 1;
   profile.tk++;
   if (hasUmlaut(z.g)) profile.uk++;
   if (clean && articleOf(z.g) && z.kind !== "en") profile.cnk++;
@@ -2662,6 +2795,12 @@ function update(dt){
     G.waveGap -= dt;
     if (G.waveGap<=0){
       // next wave
+      const wk = G.waveKills || 0;
+      const wOk = G.keysOk - (G.waveOk0 || 0), wBad = G.keysBad - (G.waveBad0 || 0);
+      const wAcc = wOk + wBad ? Math.round(100*wOk/(wOk+wBad)) : 100;
+      float(W/2, H*0.28, "WELLE GESCHAFFT!", "#ffc857", 30);
+      float(W/2, H*0.28 + 30, wk + " Wörter · " + wAcc + "% Treffer", "#e8e6d9", 15);
+      G.waveKills = 0; G.waveOk0 = G.keysOk; G.waveBad0 = G.keysBad;
       G.wave++; sWave(); playSfx("ui_confirm",{gain:.4});
       if (G.wave > profile.bestWave) profile.bestWave = G.wave;
       evalAchievements();
@@ -2676,7 +2815,7 @@ function update(dt){
       startIntro(pendingIntro(6));
       G.toSpawn = Math.min(6+G.wave, 16) + (G.wave%5===0?1:0);
       G.spawnT = 0.8; G.waveGap = 1.5;
-      float(W/2,H*.3,"WAVE "+G.wave,"#e8e6d9",30);
+      float(W/2,H*.4,"WELLE "+G.wave,"#e8e6d9",26);
       updateHUD();
     }
   }
@@ -2701,6 +2840,17 @@ function update(dt){
   let low=null;
   for (const c of G.zombies) if(!c.dead && (!low||c.y>low.y)) low=c;
   if (low!==G.suggest){ G.suggest=low; if(!G.target||G.target.dead) renderTypebar(); }
+  // boss entrance dim
+  if (G.bossFx){
+    ctx.fillStyle = "rgba(4,6,3," + (0.38 * Math.max(0, 1 - G.bossFx.t/1.6)).toFixed(3) + ")";
+    ctx.fillRect(-20,-20,W+40,H+40);
+  }
+  // 1-heart desaturation of the field (text drawn later stays vivid)
+  if (tensionLevel(G.hearts) === 2){
+    ctx.save(); ctx.globalCompositeOperation = "saturation";
+    ctx.globalAlpha = .45; ctx.fillStyle = "rgb(128,128,128)";
+    ctx.fillRect(-20,-20,W+40,H+40); ctx.restore();
+  }
   // bullets
   for (const b of G.bullets){ b.t += dt*10; }
   G.bullets = G.bullets.filter(b=>b.t<1);
@@ -2712,6 +2862,15 @@ function update(dt){
   for (const f of G.floats){ f.t-=dt*.8; f.y-=30*dt; }
   G.floats = G.floats.filter(f=>f.t>0);
   shakeT = Math.max(0, shakeT-dt);
+  if (G.bossFx){
+    G.bossFx.t += dt;
+    if (G.bossFx.t > 2.2){ $("bossbanner").classList.remove("show"); G.bossFx = null; }
+  }
+  const tl = tensionLevel(G.hearts);
+  if (tl > 0){
+    G.beatT = (G.beatT || 0) - dt;
+    if (G.beatT <= 0){ sHeart(); G.beatT = tl === 2 ? 0.55 : 0.95; }
+  } else G.beatT = 0;
 }
 function draw(t){
   ctx.clearRect(0,0,W,H);
@@ -2767,6 +2926,14 @@ function draw(t){
     ctx.font="800 "+f.size+"px "+"ui-monospace,Menlo,monospace";
     ctx.textAlign="center"; ctx.fillStyle=f.col; ctx.fillText(f.txt,f.x,f.y); }
   ctx.globalAlpha=1;
+  // low-health vignette (edges only — words stay readable)
+  const tl = tensionLevel(G.hearts);
+  if (tl > 0){
+    const vg = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*.36, W/2, H/2, Math.max(W,H)*.72);
+    vg.addColorStop(0, "rgba(229,72,77,0)");
+    vg.addColorStop(1, tl === 2 ? "rgba(229,72,77,.4)" : "rgba(229,72,77,.22)");
+    ctx.fillStyle = vg; ctx.fillRect(-20,-20,W+40,H+40);
+  }
   ctx.restore();
 }
 function drawZombie(z,t){
@@ -2943,7 +3110,7 @@ $("startbtn").onclick=()=>{
   $("hud").style.display="flex"; $("typebar").style.display="flex";
   if (IS_TOUCH && !IS_STANDALONE && document.documentElement.requestFullscreen)
     document.documentElement.requestFullscreen().catch(()=>{});
-  layoutKB(); newRun(); last=0; loop(); nkiFocus();
+  menuStop(); layoutKB(); newRun(); last=0; loop(); nkiFocus();
 };
 $("pausebtn").onclick=()=>{ if (state==="play"){ state="pause"; show("pause"); } };
 $("statsbtn").onclick=()=>{ renderStats(); show("stats"); };
@@ -2965,9 +3132,9 @@ function renderTrophies(){
 $("statsback").onclick=()=>show("menu");
 $("resumebtn").onclick=()=>{ hideAll(); state="play"; unhideIntro(); last=0; loop(); nkiFocus(); };
 $("quitbtn").onclick=()=>{ state="over"; gameOver(); };
-$("againbtn").onclick=()=>{ hideAll(); state="play"; layoutKB(); newRun(); last=0; loop(); nkiFocus(); };
+$("againbtn").onclick=()=>{ hideAll(); state="play"; menuStop(); layoutKB(); newRun(); last=0; loop(); nkiFocus(); };
 $("menubtn").onclick=()=>{ state="menu"; $("hud").style.display="none"; $("typebar").style.display="none";
-  NKI.blur(); layoutKB(); renderProfiles(); syncMenu(); show("menu"); };
+  NKI.blur(); layoutKB(); renderProfiles(); syncMenu(); show("menu"); menuStart(); };
 addEventListener("blur",()=>{ if(state==="play"){ state="pause"; show("pause"); } });
 
 /* ---------- stats screen ---------- */
@@ -3029,7 +3196,7 @@ $("introsay").onclick = () => { if (G.intro) sayDe(G.intro.list[G.intro.idx].g);
 /* ---------- boot ---------- */
 $("na1").textContent=PACKS.A1.length; $("na2").textContent=PACKS.A2.length;
 if (DB.last && DB.profiles[DB.last]){ profile=DB.profiles[DB.last]; soundOn=profile.sound; diff = profile.diff || "normal"; }
-renderProfiles(); syncMenu(); show("menu");
+renderProfiles(); syncMenu(); show("menu"); menuStart();
 </script>
 
 </body>

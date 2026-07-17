@@ -55,7 +55,8 @@ function boot(opts = {}){
     setMode:(m)=>{mode=m;}, layoutKB:()=>layoutKB(), groundY:()=>groundY(),
     routeChar: (typeof routeChar!=="undefined") ? routeChar : null,
     useNativeKB: () => useNativeKB(), kbH: () => KB_H, nkiFocus: () => nkiFocus(),
-    assetOk: () => ASSET.ok,
+    assetOk: () => ASSET.ok, menuRunning: () => MENU_FX.running,
+    tension: () => tensionLevel(G.hearts),
     intro: () => (typeof G!=="undefined" ? G.intro : null) };`;
   window.eval(script);
 

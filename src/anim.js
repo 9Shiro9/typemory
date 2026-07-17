@@ -31,6 +31,13 @@ function zombieSpeed(fieldH, wave, diffMult, rand){
   return (fieldH / tt) * (diffMult || 1);
 }
 
+/* low-health tension: 0 = fine, 1 = danger (≤2 hearts), 2 = critical (1 heart) */
+function tensionLevel(hearts){
+  if (hearts <= 1) return 2;
+  if (hearts <= 2) return 1;
+  return 0;
+}
+
 if (typeof module !== "undefined" && module.exports){
-  module.exports = { walkFrame, bossFrame, hitstopScale, corpseAlpha, CORPSE_TTL, zombieSpeed };
+  module.exports = { walkFrame, bossFrame, hitstopScale, corpseAlpha, CORPSE_TTL, zombieSpeed, tensionLevel };
 }
