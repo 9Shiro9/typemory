@@ -104,6 +104,41 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
   font-size:16px;background:transparent;color:transparent;caret-color:transparent;z-index:1}
 #hintbtn{pointer-events:auto;position:absolute;right:10px;top:-4px;padding:6px 12px;
   font-size:17px;display:none}
+/* --- menu redesign --- */
+.menu-panel{display:flex;flex-direction:column;gap:14px;max-width:640px}
+.mhead{margin-bottom:2px}
+.mcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.mcard h2{margin:0 0 10px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.seg{display:flex;flex-direction:column;gap:6px}
+.seg .chip{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  min-height:44px;text-align:left;padding:10px 12px;position:relative}
+.seg .chip small{color:var(--dim);font-weight:500;font-size:12px;text-align:right}
+.seg .chip.on{background:rgba(142,224,74,.1)}
+.seg .chip.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
+  border-radius:2px;background:var(--green)}
+.seg .chip.on small{color:var(--green-dim)}
+.addrow{margin-top:10px}
+.addrow input{flex:1;min-width:120px;min-height:44px}
+.addrow button{min-height:44px}
+.duebadge{margin-top:10px;font-size:13px;color:var(--amber)}
+.duebadge:empty{display:none}
+.pchip{display:flex;align-items:center;gap:9px;min-height:48px;padding:6px 14px 6px 8px}
+.pchip .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
+  font:800 15px var(--sans);color:#0c0f0a;flex:none}
+.bigcta{width:100%;min-height:56px;font:400 24px var(--display);letter-spacing:.12em;
+  text-transform:uppercase;border-radius:10px}
+.mmore{border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.mmore summary{cursor:pointer;padding:13px 16px;font:800 13px var(--sans);text-transform:uppercase;
+  letter-spacing:.14em;color:var(--dim);list-style:none;min-height:44px;display:flex;align-items:center}
+.mmore summary::before{content:"▸";margin-right:8px;transition:transform .15s;display:inline-block}
+.mmore[open] summary::before{transform:rotate(90deg)}
+.mmore-body{padding:2px 16px 16px}
+.mmore-body h2:first-child{margin-top:4px}
+.mfoot{justify-content:center}
+.mfoot button{min-height:44px}
+button:active{transform:scale(.97)}
+@media(prefers-reduced-motion:reduce){button:active{transform:none}.mmore summary::before{transition:none}}
 /* Neue Wörter intro card */
 #introword{font:800 clamp(30px,8vw,42px)/1.2 var(--mono)}
 #intromean{font:500 18px var(--sans);color:var(--dim);margin:6px 0 14px}
@@ -171,69 +206,88 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
 
 <!-- MENU -->
 <div id="menu" class="overlay">
-  <div class="panel">
-    <div class="brand">Typemory <span>· type it to remember it</span></div>
-    <h1>Wortschatz <span class="blut">Apocalypse</span> 🧟</h1>
-    <p class="sub">Campaign 1 — German A1+A2. Type the falling words to shoot the zombies
-      before they reach your barricade.</p>
+  <div class="panel menu-panel">
+    <header class="mhead">
+      <div class="brand">Typemory <span>· type it to remember it</span></div>
+      <h1>Wortschatz <span class="blut">Apocalypse</span></h1>
+      <p class="sub">Campaign 1 · German A1 + A2 — type the falling words before they bite.</p>
+    </header>
 
-    <h2>Survivor</h2>
-    <div class="row" id="profiles"></div>
-    <div class="row" style="margin-top:8px">
-      <input type="text" id="pname" maxlength="14" placeholder="new survivor name">
-      <button id="paddbtn">Add</button>
-    </div>
-    <p class="mini" id="duecount" style="margin-top:8px;color:var(--amber)"></p>
-
-    <h2>Word pack</h2>
-    <div class="row">
-      <button class="chip on" id="packA1">A1 · <span id="na1"></span> words</button>
-      <button class="chip" id="packA2">A2 · <span id="na2"></span> words</button>
-      <button class="chip" id="packBoth">A1 + A2</button>
-    </div>
-
-    <h2>Mode</h2>
-    <div class="row">
-      <button class="chip on" id="modeLearn">Learn — auto difficulty</button>
-      <button class="chip" id="modeCopy">Copy — word always shown</button>
-      <button class="chip" id="modeRecall">Recall — meaning only</button>
-    </div>
-    <p class="mini" style="margin-top:6px">Learn levels each word up as you master it:
-      📖 word shown → ⚡ flashes, then vanishes mid-air → 🧠 meaning only →
-      ❓ surprise checks where you type the <i>meaning</i>. No more mindless copying.</p>
-
-    <h2>Input</h2>
-    <div class="row">
-      <button class="chip" id="oskchip">⌨️ Use on-screen keyboard</button>
-      <span class="mini">off = your device's own keyboard (phones/tablets)</span>
-    </div>
-
-    <h2>Article colors — learn the gender by color</h2>
-    <div class="legend">
-      <span><b class="der">der</b> masculine</span>
-      <span><b class="die">die</b> feminine</span>
-      <span><b class="das">das</b> neuter</span>
-      <span style="margin-left:auto">nouns must be typed <i>with</i> their article</span>
-    </div>
-
-    <h2>Controls</h2>
-    <p class="help">
-      Zombies fall from the sky — just type and the lowest zombie whose word starts with
-      that letter gets targeted. On a phone, use the on-screen keys.
-      No German keyboard needed: for <kbd>ä ö ü ß</kbd> just type <kbd>a o u s</kbd>
-      (<kbd>ae oe ue ss</kbd> work too) ·
-      <kbd>Tab</kbd>/<kbd>💡</kbd> reveals a letter in Recall (costs points) ·
-      <kbd>Esc</kbd>/<kbd>⏸</kbd> pause · Mistakes make the zombie <i>faster</i>. Let 5 through and you're bitten.
-    </p>
-
-    <div class="row" style="margin-top:22px;justify-content:space-between">
-      <button class="primary" id="startbtn">▶ Survive</button>
-      <div class="row">
-        <button id="installbtn" class="hidden">📲 Install app</button>
-        <button id="statsbtn">📊 Progress</button>
-        <button id="soundbtn">🔊 Sound on</button>
-        <button id="creditsbtn">Credits</button>
+    <section class="mcard">
+      <h2>Survivor</h2>
+      <div class="row" id="profiles"></div>
+      <div class="row addrow">
+        <input type="text" id="pname" maxlength="14" placeholder="new survivor name" autocomplete="off">
+        <button id="paddbtn">Add</button>
       </div>
+      <p class="duebadge" id="duecount"></p>
+    </section>
+
+    <section class="mgrid">
+      <div class="mcard">
+        <h2>Words</h2>
+        <div class="seg">
+          <button class="chip on" id="packA1">A1 <small><span id="na1"></span> words</small></button>
+          <button class="chip" id="packA2">A2 <small><span id="na2"></span> words</small></button>
+          <button class="chip" id="packBoth">A1 + A2 <small>everything</small></button>
+        </div>
+      </div>
+      <div class="mcard">
+        <h2>Mode</h2>
+        <div class="seg">
+          <button class="chip on" id="modeLearn">Learn <small>auto per-word difficulty</small></button>
+          <button class="chip" id="modeCopy">Copy <small>word always shown</small></button>
+          <button class="chip" id="modeRecall">Recall <small>meaning only</small></button>
+        </div>
+      </div>
+      <div class="mcard">
+        <h2>Horde speed</h2>
+        <div class="seg">
+          <button class="chip" id="diffChill">Chill <small>slow shamble</small></button>
+          <button class="chip on" id="diffNormal">Normal <small>balanced</small></button>
+          <button class="chip" id="diffTurbo">Turbo <small>for fast typers</small></button>
+        </div>
+      </div>
+    </section>
+
+    <button class="primary bigcta" id="startbtn">▶ Survive</button>
+
+    <details class="mmore">
+      <summary>How to play · settings</summary>
+      <div class="mmore-body">
+        <h2>Learn mode</h2>
+        <p class="mini">Each word levels up as you master it:
+          📖 word shown → ⚡ flashes, then vanishes mid-air → 🧠 meaning only →
+          ❓ surprise checks where you type the <i>meaning</i>.</p>
+        <h2>Controls</h2>
+        <p class="help">
+          Just type — the lowest zombie whose word starts with that letter gets targeted.
+          No German keyboard needed: for <kbd>ä ö ü ß</kbd> type <kbd>a o u s</kbd>
+          (<kbd>ae oe ue ss</kbd> work too) ·
+          <kbd>Tab</kbd>/<kbd>💡</kbd> reveals a letter (costs points) ·
+          <kbd>Esc</kbd>/<kbd>⏸</kbd> pause · Mistakes make the zombie <i>faster</i>.
+          Let 5 through and you're bitten.
+        </p>
+        <h2>Articles = colors</h2>
+        <div class="legend">
+          <span><b class="der">der</b> masculine</span>
+          <span><b class="die">die</b> feminine</span>
+          <span><b class="das">das</b> neuter</span>
+          <span>type nouns <i>with</i> their article</span>
+        </div>
+        <h2>Input</h2>
+        <div class="row">
+          <button class="chip" id="oskchip">⌨️ Use on-screen keyboard</button>
+          <span class="mini">off = your device's own keyboard</span>
+        </div>
+      </div>
+    </details>
+
+    <div class="row mfoot">
+      <button id="installbtn" class="hidden">📲 Install app</button>
+      <button id="statsbtn">📊 Progress</button>
+      <button id="soundbtn">🔊 Sound on</button>
+      <button id="creditsbtn">Credits</button>
     </div>
   </div>
 </div>
@@ -346,7 +400,7 @@ const DB_KEY = "wortapoc.v2";
 let DB = { profiles:{}, last:null };
 try { const raw = localStorage.getItem(DB_KEY); if (raw) DB = JSON.parse(raw); } catch(e){}
 const save = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e){} };
-const blankProfile = name => ({ name, sound:true, osk:false, words:{}, unlocked:{A1:25,A2:25},
+const blankProfile = name => ({ name, sound:true, osk:false, diff:"normal", words:{}, unlocked:{A1:25,A2:25},
   highScore:0, bestWave:0, bestCombo:0, games:0, keysOk:0, keysBad:0,
   runs:[], streak:{last:"",count:0}, day:{d:"",nw:0,rev:0} });
 const wordStat = (p,w) => p.words[w] || (p.words[w] = {k:0,c:0,e:0,l:0,m:0,in:0,iv:0,ls:0,td:""});
@@ -543,6 +597,8 @@ let state = "menu";      // menu | play | pause | over
 let profile = null;
 let packsOn = {A1:true, A2:false};
 let mode = "learn";      // learn | copy | recall
+let diff = "normal";     // chill | normal | turbo
+const DIFF_MULT = { chill: 0.72, normal: 1, turbo: 1.32 };
 const G = {};            // per-run state
 
 function activePool(){
@@ -657,7 +713,7 @@ function spawnZombie(boss){
     flashT: Math.min(2.5, Math.max(0.8, w.g.length*0.15)),
     answers: kind==="en" ? meaningAnswers(w.e) : null, typed:"", done:false,
     x: 44 + Math.random()*(W-88), y: -34,
-    v: (H*0.05 + G.wave*3.5 + Math.random()*12) * (boss?0.5:1),
+    v: zombieSpeed(groundY() + 34, G.wave, DIFF_MULT[diff], Math.random()) * (boss?0.55:1),
     boss, emo: Z_EMO[Math.floor(Math.random()*Z_EMO.length)],
     skin: ["zombie","bloody","rotting","headless"][Math.floor(Math.random()*4)],
     anim: Math.random()*10,
@@ -1281,15 +1337,21 @@ function show(id){ hideAll(); $(id).classList.remove("hidden"); }
 function hideAll(){ for (const id of ["menu","stats","pause","over","iosguide","introcard","credits"]) $(id).classList.add("hidden"); }
 function unhideIntro(){ if (G.intro){ $("introcard").classList.remove("hidden"); renderIntro(); } }
 
+const AV_COLORS = ["#8ee04a","#ffc857","#6ab0ff","#ff7a9e","#e5484d"];
 function renderProfiles(){
   const box=$("profiles"); box.innerHTML="";
   const names=Object.keys(DB.profiles);
   if (!names.length) box.innerHTML="<span class='mini'>no survivors yet — add yourself and your partner ↓</span>";
   for (const n of names){
     const b=document.createElement("button");
-    b.className="chip"+(profile&&profile.name===n?" on":"");
-    b.textContent="🧑 "+n;
-    b.onclick=()=>{ profile=DB.profiles[n]; DB.last=n; soundOn=profile.sound; save(); renderProfiles(); syncMenu(); };
+    b.className="chip pchip"+(profile&&profile.name===n?" on":"");
+    const hue = [...n].reduce((a,c)=>a+c.charCodeAt(0),0) % AV_COLORS.length;
+    const av=document.createElement("span"); av.className="av";
+    av.style.background = AV_COLORS[hue];
+    av.textContent = n[0].toUpperCase();
+    b.appendChild(av); b.appendChild(document.createTextNode(n));
+    b.onclick=()=>{ profile=DB.profiles[n]; DB.last=n; soundOn=profile.sound;
+      diff = profile.diff || "normal"; save(); renderProfiles(); syncMenu(); };
     box.appendChild(b);
   }
 }
@@ -1310,6 +1372,9 @@ function updateDue(){
 function syncMenu(){
   updateDue();
   $("oskchip").classList.toggle("on", !!(profile && profile.osk));
+  $("diffChill").classList.toggle("on", diff==="chill");
+  $("diffNormal").classList.toggle("on", diff==="normal");
+  $("diffTurbo").classList.toggle("on", diff==="turbo");
   $("packA1").classList.toggle("on", packsOn.A1 && !packsOn.A2);
   $("packA2").classList.toggle("on", packsOn.A2 && !packsOn.A1);
   $("packBoth").classList.toggle("on", packsOn.A1 && packsOn.A2);
@@ -1323,6 +1388,10 @@ $("packA1").onclick=()=>setPacks(true,false);
 $("packA2").onclick=()=>setPacks(false,true);
 $("packBoth").onclick=()=>setPacks(true,true);
 $("oskchip").onclick=()=>{ if (!profile) return; profile.osk = !profile.osk; save(); syncMenu(); };
+const setDiff = d => { diff = d; if (profile){ profile.diff = d; save(); } syncMenu(); };
+$("diffChill").onclick=()=>setDiff("chill");
+$("diffNormal").onclick=()=>setDiff("normal");
+$("diffTurbo").onclick=()=>setDiff("turbo");
 $("modeLearn").onclick=()=>{ mode="learn"; syncMenu(); };
 $("modeCopy").onclick=()=>{ mode="copy"; syncMenu(); };
 $("modeRecall").onclick=()=>{ mode="recall"; syncMenu(); };
@@ -1405,6 +1474,6 @@ $("introsay").onclick = () => { if (G.intro) sayDe(G.intro.list[G.intro.idx].g);
 
 /* ---------- boot ---------- */
 $("na1").textContent=PACKS.A1.length; $("na2").textContent=PACKS.A2.length;
-if (DB.last && DB.profiles[DB.last]){ profile=DB.profiles[DB.last]; soundOn=profile.sound; }
+if (DB.last && DB.profiles[DB.last]){ profile=DB.profiles[DB.last]; soundOn=profile.sound; diff = profile.diff || "normal"; }
 renderProfiles(); syncMenu(); show("menu");
 </script>

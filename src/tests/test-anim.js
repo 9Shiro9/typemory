@@ -59,5 +59,32 @@ ok(log2.length > 0 && log2.every(on => on === false), "toggle-off: every sfx att
 // emoji fallback: no assets loaded headlessly, game fully playable
 ok(h.t.assetOk() === false, "headless: sprites unavailable → fallback active");
 
+// ---- travel-time speed: crossing time is device-independent ----
+const crossPhone   = 500 / A.zombieSpeed(500, 1, 1, 0.5);   // short mobile field
+const crossDesktop = 900 / A.zombieSpeed(900, 1, 1, 0.5);   // tall desktop field
+ok(Math.abs(crossPhone - crossDesktop) < 0.01,
+   `crossing time identical across devices (${crossPhone.toFixed(1)}s vs ${crossDesktop.toFixed(1)}s)`);
+ok(crossPhone > 10 && crossPhone < 17, `wave-1 crossing ~14s (got ${crossPhone.toFixed(1)}s)`);
+const crossW10 = 500 / A.zombieSpeed(500, 10, 1, 0.5);
+ok(crossW10 < crossPhone && crossW10 >= 6, `wave 10 faster but floored (${crossW10.toFixed(1)}s)`);
+ok(A.zombieSpeed(500, 1, 0.72, 0.5) < A.zombieSpeed(500, 1, 1, 0.5), "chill slower than normal");
+ok(A.zombieSpeed(500, 1, 1.32, 0.5) > A.zombieSpeed(500, 1, 1, 0.5), "turbo faster than normal");
+
+// difficulty chips persist to profile
+{
+  const hd = boot();
+  hd.newProfile("D");
+  hd.click("diffChill");
+  ok(hd.t.profile().diff === "chill", "difficulty persisted on profile");
+  ok(hd.$("diffChill").className.includes("on") && !hd.$("diffNormal").className.includes("on"),
+     "difficulty chips reflect selection");
+  hd.click("startbtn"); hd.finishIntro();
+  hd.t.spawnZombie(false);
+  const zc = hd.t.G.zombies[0];
+  const fieldH = hd.t.groundY() + 34;
+  ok(zc.v <= A.zombieSpeed(fieldH, 1, 0.72, 0) + 1 && zc.v >= A.zombieSpeed(fieldH, 1, 0.72, 1) - 1,
+     `chill spawn speed within jitter bounds (${zc.v.toFixed(1)})`);
+}
+
 console.log(fails === 0 ? "test-anim: ALL PASS" : `test-anim: ${fails} FAILURES`);
 process.exit(fails ? 1 : 0);

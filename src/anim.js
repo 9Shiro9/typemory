@@ -23,6 +23,14 @@ function corpseAlpha(dead){
   return Math.max(0, 0.9 * (1 - (dead - 1) / (CORPSE_TTL - 1)));
 }
 
+/* zombie speed from TRAVEL TIME, not screen height — a phone with the keyboard
+   open has a short battlefield, so speed must scale with the actual distance.
+   Returns px/s such that crossing takes tt seconds regardless of device. */
+function zombieSpeed(fieldH, wave, diffMult, rand){
+  const tt = Math.max(6.5, 14 - wave * 0.5) * (0.85 + rand * 0.3);
+  return (fieldH / tt) * (diffMult || 1);
+}
+
 if (typeof module !== "undefined" && module.exports){
-  module.exports = { walkFrame, bossFrame, hitstopScale, corpseAlpha, CORPSE_TTL };
+  module.exports = { walkFrame, bossFrame, hitstopScale, corpseAlpha, CORPSE_TTL, zombieSpeed };
 }
