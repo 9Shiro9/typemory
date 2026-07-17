@@ -7,7 +7,7 @@ const path = require("path");
 
 function boot(opts = {}){
   const html = fs.readFileSync(path.join(__dirname, "..", "..", "index.html"), "utf8");
-  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true });
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://typemory.test/" });
   const { window } = dom;
 
   window.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, {

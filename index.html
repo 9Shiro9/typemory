@@ -108,6 +108,22 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
   font-size:16px;background:transparent;color:transparent;caret-color:transparent;z-index:1}
 #hintbtn{pointer-events:auto;position:absolute;right:10px;top:-4px;padding:6px 12px;
   font-size:17px;display:none}
+/* achievements */
+#achtoast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;
+  transform:translate(-50%,-90px);z-index:30;background:var(--panel2);
+  border:1px solid var(--amber);border-radius:10px;padding:10px 18px;
+  display:flex;flex-direction:column;gap:2px;pointer-events:none;
+  transition:transform .25s ease-out;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+#achtoast.show{transform:translate(-50%,0)}
+#achtoast b{color:var(--amber);font-size:15px}
+#achtoast span{color:var(--dim);font-size:12px}
+.trophygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px}
+.trophy{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:12px;display:flex;flex-direction:column;gap:4px;opacity:.45}
+.trophy.got{opacity:1;border-color:var(--amber);box-shadow:0 0 14px rgba(255,200,87,.12)}
+.trophy .ticon{font-size:22px}
+.trophy b{font-size:14px}
+@media(prefers-reduced-motion:reduce){#achtoast{transition:none}}
 /* --- menu redesign --- */
 .menu-panel{display:flex;flex-direction:column;gap:14px;max-width:640px}
 .mhead{margin-bottom:2px}
@@ -292,6 +308,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
     <div class="row mfoot">
       <button id="installbtn" class="hidden">📲 Install app</button>
       <button id="statsbtn">📊 Progress</button>
+      <button id="trophybtn">🏆 Trophäen</button>
       <button id="soundbtn">🔊 Sound on</button>
       <button id="creditsbtn">Credits</button>
     </div>
@@ -343,6 +360,17 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
     <div id="introtype"></div>
     <p class="mini" style="margin-top:14px">Type the word once to recruit it — no timer,
       no penalty. <button id="introsay" style="padding:2px 10px">🔊 hear it</button></p>
+  </div>
+</div>
+
+<div id="achtoast"></div>
+
+<!-- TROPHIES -->
+<div id="trophies" class="overlay hidden">
+  <div class="panel" style="max-width:640px">
+    <h1 style="font-size:26px">Trophäen</h1>
+    <div id="trophygrid" class="trophygrid"></div>
+    <div class="row" style="margin-top:16px"><button id="trophyback">← Back</button></div>
   </div>
 </div>
 
@@ -1810,6 +1838,41 @@ if (typeof module !== "undefined" && module.exports){
   module.exports = { walkFrame, bossFrame, hitstopScale, corpseAlpha, CORPSE_TTL, zombieSpeed };
 }
 
+/* Achievements — pure rules over a stats snapshot.
+   Spliced into the game by build.py AND require()d by node tests. */
+const ACHIEVEMENTS = [
+  { id:"erster_biss",     icon:"🩸", name:"Erster Biss",        hint:"Kill your first zombie",              test:s => (s.totalKills||0) >= 1 },
+  { id:"umlaut_meister",  icon:"üäö", name:"Umlaut-Meister",    hint:"Kill 100 words containing ä ö ü ß",   test:s => (s.umlautKills||0) >= 100 },
+  { id:"artikel_gott",    icon:"⚧",  name:"Artikel-Gott",       hint:"50 clean noun kills (article typed)", test:s => (s.cleanNounKills||0) >= 50 },
+  { id:"friedhofswaerter",icon:"🪦", name:"Friedhofswärter",    hint:"Reach wave 20",                       test:s => (s.bestWave||0) >= 20 },
+  { id:"flamme7",         icon:"🔥", name:"7-Tage-Flamme",      hint:"Keep a 7-day streak",                 test:s => (s.streak||0) >= 7 },
+  { id:"wortschatz100",   icon:"📖", name:"Wortschatz-100",     hint:"Master 100 words",                    test:s => (s.mastered||0) >= 100 },
+  { id:"wortschatz500",   icon:"📚", name:"Wortschatz-500",     hint:"Master 500 words",                    test:s => (s.mastered||0) >= 500 },
+  { id:"blitzfinger",     icon:"⚡", name:"Blitzfinger",         hint:"20 kills without a single miss",      test:s => (s.bestKillStreak||0) >= 20 },
+  { id:"nachtschicht",    icon:"🌙", name:"Nachtschicht",       hint:"Hit the daily goal 3 days running",   test:s => (s.goalDays||0) >= 3 },
+  { id:"endgegner",       icon:"👑", name:"Endgegner-Schlächter", hint:"Slay 10 bosses",                    test:s => (s.bossKills||0) >= 10 }
+];
+
+/* returns the list of NEWLY earned achievement objects (idempotent: already-earned skipped) */
+function checkAchievements(stats, earned){
+  const out = [];
+  for (const a of ACHIEVEMENTS)
+    if (!earned[a.id] && a.test(stats)) out.push(a);
+  return out;
+}
+
+/* kill-streak callouts at exact thresholds (German flavor is the point) */
+function calloutFor(streak){
+  return { 3:"Doppelkill!", 5:"Super!", 8:"Wahnsinn!", 12:"Unaufhaltsam!" }[streak] || null;
+}
+
+/* does a German word contain umlaut characters? */
+function hasUmlaut(w){ return /[äöüßÄÖÜ]/.test(w); }
+
+if (typeof module !== "undefined" && module.exports){
+  module.exports = { ACHIEVEMENTS, checkAchievements, calloutFor, hasUmlaut };
+}
+
 
 /* ---------- data ---------- */
 const PACKS = { A1: VOCAB, A2: VOCAB_A2 };
@@ -1829,13 +1892,14 @@ for (const [k,list] of Object.entries(PACKS)){
 const articleOf = w => { const m = w.match(/^(der|die|das)\s/); return m ? m[1] : null; };
 
 /* ---------- storage ---------- */
-const DB_KEY = "wortapoc.v2";
+const DB_KEY = "wortapoc.v3";
 let DB = { profiles:{}, last:null };
 try { const raw = localStorage.getItem(DB_KEY); if (raw) DB = JSON.parse(raw); } catch(e){}
 const save = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e){} };
 const blankProfile = name => ({ name, sound:true, osk:false, diff:"normal", words:{}, unlocked:{A1:25,A2:25},
   highScore:0, bestWave:0, bestCombo:0, games:0, keysOk:0, keysBad:0,
-  runs:[], streak:{last:"",count:0}, day:{d:"",nw:0,rev:0} });
+  runs:[], streak:{last:"",count:0}, day:{d:"",nw:0,rev:0},
+  ach:{}, tk:0, uk:0, cnk:0, bossK:0, bkstr:0, gd:0, gdLast:"" });
 const wordStat = (p,w) => p.words[w] || (p.words[w] = {k:0,c:0,e:0,l:0,m:0,in:0,iv:0,ls:0,td:""});
 
 /* ---------- dom ---------- */
@@ -2163,7 +2227,7 @@ function newRun(){
   G.wave=1; G.score=0; G.combo=0; G.hearts=5;
   G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null; G.grace=null; G.suggest=null;
   G.keysOk=0; G.keysBad=0; G.chars=0; G.t0=performance.now(); G.masteredRun=0;
-  G.weak={}; G.over=false; G.intro=null;
+  G.weak={}; G.over=false; G.intro=null; G.killStreak=0;
   $("newwords").textContent="";
   updateHUD(); renderTypebar();
   startIntro(pendingIntro(5));
@@ -2198,7 +2262,7 @@ function drawProps(gy){
 }
 
 function loseHeart(z){
-  G.hearts--; sHurt(); playSfx("punch_h",{gain:.6}); flash(.5);
+  G.hearts--; sHurt(); G.killStreak=0; playSfx("punch_h",{gain:.6}); flash(.5);
   if (!reduceMotion) shakeT = Math.max(shakeT, 0.32);
   fxSpawn("fx_slash","r",z.x,groundY()-30,{life:.4,s0:.6,s1:1.3});
   fxSpawn("fx_smoke2","r",z.x,groundY()-40,{life:.6,s0:.4,s1:1.1,add:false});
@@ -2224,6 +2288,14 @@ function killZombie(z){
     const need = mode==="learn" ? 6 : 3;   // in Learn, mastery = climbing the whole ladder
     if (s.c>=need && !s.m){ s.m=1; G.masteredRun++; float(z.x,z.y-40,"GELERNT ✓","#ffc857",16); }
   } else { s.c=0; G.weak[z.g]=z.e; }
+  profile.tk++;
+  if (hasUmlaut(z.g)) profile.uk++;
+  if (clean && articleOf(z.g) && z.kind !== "en") profile.cnk++;
+  if (z.boss) profile.bossK++;
+  G.killStreak = (G.killStreak||0) + 1;
+  if (G.killStreak > profile.bkstr) profile.bkstr = G.killStreak;
+  const co = calloutFor(G.killStreak);
+  if (co) float(W/2, H*0.28, co, "#ffc857", 26);
   const nowMs = Date.now();
   const firstEver = !(s.ls > 0);
   srsApply(s, clean, nowMs);
@@ -2233,6 +2305,7 @@ function killZombie(z){
     if (!profile.day || profile.day.d !== tk) profile.day = {d:tk, nw:0, rev:0};
     if (firstEver) profile.day.nw++; else profile.day.rev++;
   }
+  evalAchievements();
   const typedLen = z.kind==="en" ? z.typed.replace(/\s/g,"").length : z.g.replace(/\s/g,"").length;
   const mult = 1 + Math.min(G.combo,10)*.1;
   const pts = Math.round(Math.max(typedLen,2)*10*mult*(z.boss?2:1));
@@ -2264,6 +2337,12 @@ function gameOver(){
     const y = dayKey(nowMs - DAY_MS);
     st.count = (st.last === y) ? st.count + 1 : 1; st.last = tk;
   }
+  if (doneToday >= DAILY_GOAL && profile.gdLast !== tk){
+    const y = dayKey(nowMs - DAY_MS);
+    profile.gd = (profile.gdLast === y) ? profile.gd + 1 : 1;
+    profile.gdLast = tk;
+  }
+  evalAchievements();
   profile.runs.push({d:today,score:G.score,wave:G.wave,wpm,acc,mode,
     packs:Object.keys(packsOn).filter(k=>packsOn[k]).join("+")});
   if (profile.runs.length>60) profile.runs.shift();
@@ -2285,6 +2364,33 @@ function gameOver(){
   show("over");
 }
 const stat=(v,k)=>`<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+
+/* ---------- achievements ---------- */
+function achSnapshot(p){
+  let mastered = 0;
+  for (const w in p.words) if (p.words[w].m) mastered++;
+  return { totalKills:p.tk, umlautKills:p.uk, cleanNounKills:p.cnk,
+    bestWave:p.bestWave, streak:p.streak.count, mastered,
+    bestKillStreak:p.bkstr, goalDays:p.gd, bossKills:p.bossK };
+}
+let achToastT = 0;
+function evalAchievements(){
+  if (!profile) return;
+  const fresh = checkAchievements(achSnapshot(profile), profile.ach);
+  for (const a of fresh){
+    profile.ach[a.id] = dayKey(Date.now());
+    achToast(a);
+  }
+  if (fresh.length) save();
+}
+function achToast(a){
+  const el = $("achtoast");
+  el.innerHTML = `<b>🏆 ${esc(a.name)}</b><span>${esc(a.hint)}</span>`;
+  el.classList.add("show");
+  playSfx("ui_confirm", {gain:.4, rate:1.2});
+  clearTimeout(achToastT);
+  achToastT = setTimeout(()=>el.classList.remove("show"), 3200);
+}
 
 /* ---------- fx ---------- */
 function float(x,y,txt,col,size){ G.floats.push({x,y,txt,col,size,t:1}); }
@@ -2380,7 +2486,7 @@ function handleKey(k){
   else renderTypebar();
 }
 function miss(z){
-  G.keysBad++; G.combo=0; sErr(); flash(.6);
+  G.keysBad++; G.combo=0; G.killStreak=0; sErr(); flash(.6);
   if (navigator.vibrate) navigator.vibrate(40);
   if (!reduceMotion) shakeT=.25;
   $("tword").classList.remove("err"); void $("tword").offsetWidth; $("tword").classList.add("err");
@@ -2557,6 +2663,8 @@ function update(dt){
     if (G.waveGap<=0){
       // next wave
       G.wave++; sWave(); playSfx("ui_confirm",{gain:.4});
+      if (G.wave > profile.bestWave) profile.bestWave = G.wave;
+      evalAchievements();
       if (G.wave%3===0 && G.hearts<5){ G.hearts++; }
       let unlocked=0;
       for (const k of ["A1","A2"]) if (packsOn[k] && profile.unlocked[k]<ORDERED[k].length){
@@ -2767,7 +2875,7 @@ function roundRect(x,y,w,h,r){ ctx.beginPath();
 
 /* ---------- screens ---------- */
 function show(id){ hideAll(); $(id).classList.remove("hidden"); }
-function hideAll(){ for (const id of ["menu","stats","pause","over","iosguide","introcard","credits"]) $(id).classList.add("hidden"); }
+function hideAll(){ for (const id of ["menu","stats","pause","over","iosguide","introcard","credits","trophies","garden"]){ const el=$(id); if (el) el.classList.add("hidden"); } }
 function unhideIntro(){ if (G.intro){ $("introcard").classList.remove("hidden"); renderIntro(); } }
 
 const AV_COLORS = ["#8ee04a","#ffc857","#6ab0ff","#ff7a9e","#e5484d"];
@@ -2841,6 +2949,19 @@ $("pausebtn").onclick=()=>{ if (state==="play"){ state="pause"; show("pause"); }
 $("statsbtn").onclick=()=>{ renderStats(); show("stats"); };
 $("creditsbtn").onclick=()=>show("credits");
 $("creditsback").onclick=()=>show("menu");
+$("trophybtn").onclick=()=>{ renderTrophies(); show("trophies"); };
+$("trophyback").onclick=()=>show("menu");
+function renderTrophies(){
+  const earned = (profile && profile.ach) || {};
+  $("trophygrid").innerHTML = ACHIEVEMENTS.map(a => {
+    const got = earned[a.id];
+    return `<div class="trophy${got?" got":""}">
+      <span class="ticon">${got ? esc(a.icon) : "🔒"}</span>
+      <b>${esc(a.name)}</b>
+      <span class="mini">${got ? "freigeschaltet " + esc(got) : esc(a.hint)}</span>
+    </div>`;
+  }).join("");
+}
 $("statsback").onclick=()=>show("menu");
 $("resumebtn").onclick=()=>{ hideAll(); state="play"; unhideIntro(); last=0; loop(); nkiFocus(); };
 $("quitbtn").onclick=()=>{ state="over"; gameOver(); };

@@ -11,9 +11,11 @@ vocab = (open(os.path.join(SRC, "vocab.js"), encoding="utf-8").read() + "\n"
 sched = open(os.path.join(SRC, "scheduler.js"), encoding="utf-8").read()
 inp = open(os.path.join(SRC, "input.js"), encoding="utf-8").read()
 anim = open(os.path.join(SRC, "anim.js"), encoding="utf-8").read()
+ach = open(os.path.join(SRC, "achievements.js"), encoding="utf-8").read()
 out = (src.replace("/*__VOCAB__*/", vocab).replace("/*__SCHEDULER__*/", sched)
-          .replace("/*__INPUT__*/", inp).replace("/*__ANIM__*/", anim))
-for ph in ("/*__VOCAB__*/", "/*__SCHEDULER__*/", "/*__INPUT__*/", "/*__ANIM__*/"):
+          .replace("/*__INPUT__*/", inp).replace("/*__ANIM__*/", anim)
+          .replace("/*__ACH__*/", ach))
+for ph in ("/*__VOCAB__*/", "/*__SCHEDULER__*/", "/*__INPUT__*/", "/*__ANIM__*/", "/*__ACH__*/"):
     assert ph not in out, ph + " not replaced"
 
 final = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
