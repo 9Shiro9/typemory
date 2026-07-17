@@ -55,6 +55,7 @@ function boot(opts = {}){
     setMode:(m)=>{mode=m;}, layoutKB:()=>layoutKB(), groundY:()=>groundY(),
     routeChar: (typeof routeChar!=="undefined") ? routeChar : null,
     useNativeKB: () => useNativeKB(), kbH: () => KB_H, nkiFocus: () => nkiFocus(),
+    assetOk: () => ASSET.ok,
     intro: () => (typeof G!=="undefined" ? G.intro : null) };`;
   window.eval(script);
 

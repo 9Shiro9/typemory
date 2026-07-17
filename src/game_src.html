@@ -13,9 +13,19 @@
   --bg:#0c0f0a; --panel:#141a10; --panel2:#1a2214; --line:#2c3820;
   --bone:#e8e6d9; --dim:#98a087; --green:#8ee04a; --green-dim:#4f7a2b;
   --red:#e5484d; --amber:#ffc857; --blue:#6ab0ff; --pink:#ff7a9e;
-  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Cascadia Mono",monospace;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Cascadia Mono",monospace;
   --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Creepster",var(--sans);
 }
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:700;font-display:swap;
+  src:url(assets/fonts/jetbrains-mono-700-latin.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:700;font-display:swap;
+  src:url(assets/fonts/jetbrains-mono-700-latin-ext.woff2) format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Creepster";font-style:normal;font-weight:400;font-display:swap;
+  src:url(assets/fonts/creepster-latin.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--bone);font-family:var(--sans);touch-action:manipulation}
@@ -27,7 +37,7 @@ body{background:var(--bg);color:var(--bone);font-family:var(--sans);touch-action
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;
   padding:28px 32px;max-width:720px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6);
   margin:auto}
-h1{font:900 clamp(28px,5vw,44px)/1.05 var(--sans);text-transform:uppercase;letter-spacing:.04em;
+h1{font:400 clamp(30px,5.5vw,48px)/1.05 var(--display);text-transform:uppercase;letter-spacing:.06em;
   color:var(--bone);text-shadow:0 0 18px rgba(229,72,77,.45),0 2px 0 #000}
 h1 .blut{color:var(--red)}
 .brand{font:800 12px var(--sans);letter-spacing:.34em;text-transform:uppercase;
@@ -71,6 +81,12 @@ input[type=text]:focus{outline:none;border-color:var(--green)}
 #tword .todo{color:var(--bone)}
 #tword .blank{color:var(--dim)}
 #tword.err{animation:shake .18s}
+#tword .pop{display:inline-block;animation:pop .14s ease-out}
+@keyframes pop{0%{transform:scale(1.7)}100%{transform:scale(1)}}
+#tword.fire{text-shadow:0 0 14px rgba(255,200,87,.8),0 0 30px rgba(229,72,77,.4);
+  animation:firepulse .5s infinite alternate}
+@keyframes firepulse{from{text-shadow:0 0 10px rgba(255,200,87,.7)}to{text-shadow:0 0 22px rgba(255,120,60,.9)}}
+@media(prefers-reduced-motion:reduce){#tword .pop{animation:none}#tword.fire{animation:none}}
 #tmean{font:500 17px var(--sans);color:var(--dim)}
 /* iPhone-style key preview: "u → ü" */
 #umbub{position:absolute;top:-34px;left:50%;transform:translate(-50%,8px) scale(.6);opacity:0;
@@ -216,6 +232,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
         <button id="installbtn" class="hidden">📲 Install app</button>
         <button id="statsbtn">📊 Progress</button>
         <button id="soundbtn">🔊 Sound on</button>
+        <button id="creditsbtn">Credits</button>
       </div>
     </div>
   </div>
@@ -269,6 +286,24 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
   </div>
 </div>
 
+<!-- CREDITS -->
+<div id="credits" class="overlay hidden">
+  <div class="panel" style="max-width:560px">
+    <h1 style="font-size:26px">Credits</h1>
+    <p class="help" style="line-height:2;margin-top:10px">
+      🧟 Zombies by Svetlana Kushnariova (Cabbit) &amp; Jordan Irwin (AntumDeluge) — CC-BY, opengameart.org/content/zombies<br>
+      🧟 Boss zombie by Riley Gombart — CC0, opengameart.org/content/animated-top-down-zombie<br>
+      🪦 Graveyard tileset by angrysnail — CC0, angrysnail.itch.io<br>
+      ✨ Particles &amp; UI/impact sounds by Kenney — CC0, kenney.nl<br>
+      🔊 Zombie sounds by artisticdude — CC0, opengameart.org/content/zombies-sound-pack<br>
+      🔤 JetBrains Mono (JetBrains) &amp; Creepster (Font Diner) — SIL Open Font License<br>
+      📚 Wordlists studied from Der·Die·Das Language School course materials<br>
+      ❤️ Made by Wai &amp; his favorite study partner
+    </p>
+    <div class="row" style="margin-top:16px"><button id="creditsback">← Back</button></div>
+  </div>
+</div>
+
 <!-- GAME OVER -->
 <div id="over" class="overlay hidden">
   <div class="panel" style="max-width:640px">
@@ -287,6 +322,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
 /*__VOCAB__*/
 /*__SCHEDULER__*/
 /*__INPUT__*/
+/*__ANIM__*/
 
 /* ---------- data ---------- */
 const PACKS = { A1: VOCAB, A2: VOCAB_A2 };
@@ -327,7 +363,9 @@ addEventListener("resize", resize); resize();
 /* ---------- audio ---------- */
 let AC = null, soundOn = true;
 function ac(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
-  if (AC && AC.state==="suspended") AC.resume(); return AC; }
+  if (AC && AC.state==="suspended") AC.resume();
+  if (AC) loadSfx();
+  return AC; }
 function tone(f0,f1,dur,type,vol){ const a=ac(); if(!a||!soundOn) return;
   const o=a.createOscillator(), g=a.createGain(), t=a.currentTime;
   o.type=type||"square"; o.frequency.setValueAtTime(f0,t);
@@ -362,6 +400,96 @@ function sayDe(text){
     u.voice = deVoice; u.lang = deVoice.lang; u.rate = 0.95;
     speechSynthesis.speak(u);
   } catch(e){}
+}
+
+/* ---------- sprite assets (emoji fallback if anything fails to load) ---------- */
+const ASSET = { ok:false, img:{}, tinted:{} };
+const SPRITE_FILES = {
+  zombie:"assets/sprites/zombie.png", bloody:"assets/sprites/bloody_zombie.png",
+  rotting:"assets/sprites/rotting_zombie.png", headless:"assets/sprites/headless_zombie.png",
+  boss0:"assets/sprites/boss_0.png", boss1:"assets/sprites/boss_4.png",
+  boss2:"assets/sprites/boss_8.png", boss3:"assets/sprites/boss_12.png",
+  grave:"assets/sprites/graveyard.png",
+  fx_muzzle:"assets/sprites/fx_muzzle_01.png", fx_muzzle2:"assets/sprites/fx_muzzle_02.png",
+  fx_flare:"assets/sprites/fx_flare_01.png", fx_circle:"assets/sprites/fx_circle_01.png",
+  fx_glow:"assets/sprites/fx_circle_05.png", fx_smoke:"assets/sprites/fx_smoke_04.png",
+  fx_smoke2:"assets/sprites/fx_smoke_05.png", fx_spark:"assets/sprites/fx_spark_02.png",
+  fx_spark2:"assets/sprites/fx_spark_04.png", fx_slash:"assets/sprites/fx_slash_01.png"
+};
+const FX_COLORS = { g:"#8ee04a", r:"#e5484d", a:"#ffc857" };
+function tintSprite(im, color){
+  const c = document.createElement("canvas"); c.width=im.width; c.height=im.height;
+  const x = c.getContext("2d");
+  if (!x) return im;
+  x.drawImage(im,0,0);
+  x.globalCompositeOperation = "multiply"; x.fillStyle = color; x.fillRect(0,0,c.width,c.height);
+  x.globalCompositeOperation = "destination-in"; x.drawImage(im,0,0);
+  return c;
+}
+function loadAssets(){
+  const names = Object.keys(SPRITE_FILES);
+  let left = names.length, failed = false;
+  for (const n of names){
+    const im = new Image();
+    im.onload = () => {
+      ASSET.img[n] = im;
+      if (--left === 0 && !failed){
+        try {
+          for (const k of Object.keys(SPRITE_FILES)) if (k.startsWith("fx_"))
+            for (const [ck, col] of Object.entries(FX_COLORS))
+              ASSET.tinted[k+"_"+ck] = tintSprite(ASSET.img[k], col);
+          ASSET.ok = true;
+        } catch(e){ ASSET.ok = false; }
+      }
+    };
+    im.onerror = () => { failed = true; ASSET.ok = false; };
+    im.src = SPRITE_FILES[n];
+  }
+}
+try { loadAssets(); } catch(e){}
+
+/* ---------- sampled sfx (layered over the synth; lazy-decoded on first gesture) ---------- */
+const SFX_FILES = {
+  groan_2:"assets/sfx/groan_2.mp3", groan_4:"assets/sfx/groan_4.mp3",
+  groan_5:"assets/sfx/groan_5.mp3", groan_7:"assets/sfx/groan_7.mp3",
+  groan_10:"assets/sfx/groan_10.mp3", groan_12:"assets/sfx/groan_12.mp3",
+  groan_15:"assets/sfx/groan_15.mp3", groan_17:"assets/sfx/groan_17.mp3",
+  punch_m:"assets/sfx/impactpunch_medium_000.mp3",
+  punch_h:"assets/sfx/impactpunch_heavy_000.mp3",
+  impact_l:"assets/sfx/impactgeneric_light_001.mp3",
+  ui_click:"assets/sfx/ui_click_002.mp3",
+  ui_confirm:"assets/sfx/ui_confirmation_001.mp3"
+};
+const GROANS = ["groan_2","groan_4","groan_5","groan_7","groan_10","groan_12","groan_15","groan_17"];
+const SFX = { buf:{}, started:false };
+function loadSfx(){
+  if (SFX.started || !AC || typeof fetch !== "function") return;
+  SFX.started = true;
+  for (const [n,u] of Object.entries(SFX_FILES)){
+    fetch(u).then(r => r.arrayBuffer())
+      .then(b => AC.decodeAudioData(b))
+      .then(d => { SFX.buf[n] = d; })
+      .catch(()=>{});
+  }
+}
+function playSfx(n, o){
+  o = o || {};
+  if (window.__sfxSpy) window.__sfxSpy(n, soundOn);
+  if (!soundOn || !AC || !SFX.buf[n]) return;
+  try {
+    const src = AC.createBufferSource(); src.buffer = SFX.buf[n];
+    src.playbackRate.value = o.rate || 1;
+    const g = AC.createGain(); g.gain.value = o.gain != null ? o.gain : 0.5;
+    src.connect(g).connect(AC.destination); src.start();
+  } catch(e){}
+}
+let lastGroan = -1e9;
+function groan(){
+  const t = performance.now();
+  if (t - lastGroan < 1400) return;
+  lastGroan = t;
+  playSfx(GROANS[Math.floor(Math.random()*GROANS.length)],
+    { rate: 0.85 + Math.random()*0.4, gain: 0.28 });
 }
 
 /* ---------- typing tokens (umlaut-friendly) ----------
@@ -531,14 +659,18 @@ function spawnZombie(boss){
     x: 44 + Math.random()*(W-88), y: -34,
     v: (H*0.05 + G.wave*3.5 + Math.random()*12) * (boss?0.5:1),
     boss, emo: Z_EMO[Math.floor(Math.random()*Z_EMO.length)],
+    skin: ["zombie","bloody","rotting","headless"][Math.floor(Math.random()*4)],
+    anim: Math.random()*10,
     bob: Math.random()*6.28, err:0, hint:0, angry:0, dead:0
   };
   G.zombies.push(z);
+  groan();
 }
 
 /* ---------- run ---------- */
 function newRun(){
-  G.zombies=[]; G.bullets=[]; G.parts=[]; G.floats=[];
+  G.zombies=[]; G.bullets=[]; G.parts=[]; G.floats=[]; G.fx=[]; G.hitStop=0;
+  G.props = makeProps();
   G.wave=1; G.score=0; G.combo=0; G.hearts=5;
   G.toSpawn=7; G.spawnT=0.3; G.waveGap=0; G.target=null; G.grace=null; G.suggest=null;
   G.keysOk=0; G.keysBad=0; G.chars=0; G.t0=performance.now(); G.masteredRun=0;
@@ -549,9 +681,38 @@ function newRun(){
 }
 let KB_H = 0;
 function groundY(){ return H - KB_H - 104; }
+const GRAVE_TILES = [
+  [0,16,16,16],[16,16,16,16],[32,16,16,16],[48,16,16,16],
+  [0,32,16,16],[16,32,16,16],[32,32,16,16],[48,32,16,16],
+  [0,144,48,16],[48,144,48,16]
+];
+function makeProps(){
+  let seed = 20260717;
+  const r = () => (seed = (seed*1664525+1013904223)>>>0) / 4294967296;
+  const out = [];
+  for (let i = 0; i < 9; i++){
+    out.push({ tile: GRAVE_TILES[i < 7 ? Math.floor(r()*8) : 8 + Math.floor(r()*2)],
+      fx: 0.06 + r()*0.88, fy: r() });
+  }
+  return out;
+}
+function drawProps(gy){
+  const im = ASSET.img.grave;
+  if (!im || !G.props) return;
+  ctx.save(); ctx.globalAlpha = 0.42;
+  for (const pr of G.props){
+    const [sx,sy,sw,sh] = pr.tile;
+    const sc = 2.4, x = pr.fx*W, y = 84 + pr.fy*(gy-180);
+    ctx.drawImage(im, sx, sy, sw, sh, x - sw*sc/2, y - sh*sc/2, sw*sc, sh*sc);
+  }
+  ctx.restore();
+}
 
 function loseHeart(z){
-  G.hearts--; sHurt(); flash(.5);
+  G.hearts--; sHurt(); playSfx("punch_h",{gain:.6}); flash(.5);
+  if (!reduceMotion) shakeT = Math.max(shakeT, 0.32);
+  fxSpawn("fx_slash","r",z.x,groundY()-30,{life:.4,s0:.6,s1:1.3});
+  fxSpawn("fx_smoke2","r",z.x,groundY()-40,{life:.6,s0:.4,s1:1.1,add:false});
   const s = wordStat(profile, z.g); s.l++; s.c=0; s.m=0;
   srsApply(s, false, Date.now());
   G.weak[z.g]=z.e;
@@ -559,7 +720,10 @@ function loseHeart(z){
   if (G.hearts<=0) gameOver();
 }
 function killZombie(z){
-  z.dead=1; sKill(); sayDe(z.g);
+  z.dead=1; sKill(); playSfx("punch_m",{gain:.5,rate:.95+Math.random()*.1}); sayDe(z.g);
+  G.hitStop = Math.max(G.hitStop||0, 0.05);
+  if (!reduceMotion) shakeT = Math.max(shakeT, z.boss ? 0.22 : 0.12);
+  fxKill(z.x, z.y, z.boss);
   const clean = z.err===0 && z.hint===0;
   const s = wordStat(profile, z.g);
   s.k++;
@@ -635,6 +799,20 @@ const stat=(v,k)=>`<div class="stat"><div class="v">${v}</div><div class="k">${k
 
 /* ---------- fx ---------- */
 function float(x,y,txt,col,size){ G.floats.push({x,y,txt,col,size,t:1}); }
+function fxSpawn(name, color, x, y, o){
+  if (!ASSET.ok) return;
+  o = o || {};
+  const img = ASSET.tinted[name+"_"+color];
+  if (!img) return;
+  G.fx.push({ img, x, y, t:0, life:o.life||.3, s0:o.s0||.3, s1:o.s1||.9,
+    rot:o.rot!=null?o.rot:Math.random()*6.28, vx:o.vx||0, vy:o.vy||0, add:o.add!==false });
+}
+function fxKill(x,y,boss){
+  fxSpawn("fx_flare","a",x,y,{life:.28,s0:.35,s1:boss?1.6:1});
+  fxSpawn("fx_spark2","g",x,y,{life:.35,s0:.3,s1:1.1});
+  fxSpawn("fx_smoke","g",x,y,{life:.6,s0:.3,s1:1.2,vy:-40,add:false});
+  fxSpawn("fx_circle","r",x,y,{life:.22,s0:.15,s1:.7});
+}
 function burst(x,y,n){ for(let i=0;i<n;i++){ const a=Math.random()*6.28, v=40+Math.random()*140;
   G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,t:.6+Math.random()*.4,
     col: Math.random()<.7?"#8ee04a":"#e5484d"}); } }
@@ -705,6 +883,8 @@ function handleKey(k){
   G.keysOk++; G.chars++;
   if (r==="ok" && z.umlaut){ umBubble(BASE[z.umlaut], z.umlaut); z.umlaut=null; }
   sShoot();
+  fxSpawn("fx_muzzle","a",W/2,groundY()-52,{life:.07,s0:.5,s1:.6,rot:-Math.PI/2});
+  fxSpawn("fx_spark","g",z.x,z.y,{life:.2,s0:.15,s1:.45});
   G.bullets.push({x:W/2,y:groundY()-42,tx:z.x,ty:z.y,t:0});
   const complete = z.kind==="en" ? z.done : z.ti>=z.tokens.length;
   if (complete){ G.grace = z.kind==="en" ? null : (z.grace || null); killZombie(z); }
@@ -788,7 +968,12 @@ NKI.addEventListener("blur", () => {
   if (state === "play" && useNativeKB()) setTimeout(nkiFocus, 60);
 });
 NKI.addEventListener("focus", () => { setTimeout(() => window.scrollTo(0, 0), 0); });
-addEventListener("pointerdown", () => { if (state === "play") nkiFocus(); });
+addEventListener("pointerdown", ev => {
+  ac();
+  if (state !== "play" && ev.target && ev.target.closest && ev.target.closest("button"))
+    playSfx("ui_click", {gain:.3});
+  if (state === "play") nkiFocus();
+});
 $("hintbtn").addEventListener("pointerdown", ev => { ev.preventDefault(); ev.stopPropagation(); ac(); hint(); });
 
 /* ---------- HUD / typebar ---------- */
@@ -798,6 +983,7 @@ function updateHUD(){
   $("score").textContent = G.score;
   $("combo").textContent = G.combo>1 ? "×"+(1+Math.min(G.combo,10)*.1).toFixed(1)+" combo "+G.combo : "";
   $("combo").className = G.combo>=5 ? "hot":"";
+  $("tword").classList.toggle("fire", G.combo>=5);
   $("runinfo").textContent = profile.name+" · "+Object.keys(packsOn).filter(k=>packsOn[k]).join("+")
     +" · "+{learn:"Learn",copy:"Copy",recall:"Recall"}[mode];
 }
@@ -827,7 +1013,7 @@ function renderTypebar(){
   if (z.kind==="en"){
     const a = z.answers.find(a=>a.startsWith(z.typed)) || z.answers[0];
     const blanks = [...a.slice(z.typed.length)].map(c=>c===" "?"&nbsp;&nbsp;":"_").join("");
-    tw.innerHTML = `<span class="done">${esc(z.typed)}</span><span class="blank">${blanks}</span>`;
+    tw.innerHTML = `<span class="done">${popWrap(z.typed)}</span><span class="blank">${blanks}</span>`;
     tm.textContent = `${z.g} — type the meaning in English`;
     th.textContent = "❓ meaning check · Tab reveals a letter (−25)";
     return;
@@ -836,10 +1022,10 @@ function renderTypebar(){
   const todo = [...z.g].slice(z.ti).join("");
   const visible = z.stage==="copy" || (z.stage==="flash" && !z.masked);
   if (visible){
-    tw.innerHTML = `<span class="done">${esc(done)}</span><span class="todo">${esc(todo)}</span>`;
+    tw.innerHTML = `<span class="done">${popWrap(done)}</span><span class="todo">${esc(todo)}</span>`;
   } else {
     const blanks = [...todo].map(c=>c===" "?"&nbsp;&nbsp;":"_").join("");
-    tw.innerHTML = `<span class="done">${esc(done)}</span><span class="blank">${blanks}</span>`;
+    tw.innerHTML = `<span class="done">${popWrap(done)}</span><span class="blank">${blanks}</span>`;
   }
   tm.textContent = z.e;
   th.textContent = z.stage==="flash" ? (z.masked ? "⚡ from memory now!" : "⚡ memorize it — it vanishes soon")
@@ -847,6 +1033,7 @@ function renderTypebar(){
     : (z.buf ? `typing "${z.buf}…" for ${z.g[z.ti]}` : "");
 }
 const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const popWrap = t => t ? esc(t.slice(0,-1)) + '<span class="pop">' + esc(t.slice(-1)) + "</span>" : "";
 let bubT = 0;
 function umBubble(base,um){
   const b = $("umbub");
@@ -865,6 +1052,7 @@ function loop(ts){
   update(dt); draw(ts/1000);
 }
 function update(dt){
+  if (G.hitStop > 0){ G.hitStop -= dt; dt *= hitstopScale(G.hitStop); }
   // spawning (the horde waits politely during Neue Wörter)
   if (G.intro){ }
   else if (G.toSpawn>0){
@@ -879,7 +1067,7 @@ function update(dt){
     G.waveGap -= dt;
     if (G.waveGap<=0){
       // next wave
-      G.wave++; sWave();
+      G.wave++; sWave(); playSfx("ui_confirm",{gain:.4});
       if (G.wave%3===0 && G.hearts<5){ G.hearts++; }
       let unlocked=0;
       for (const k of ["A1","A2"]) if (packsOn[k] && profile.unlocked[k]<ORDERED[k].length){
@@ -897,15 +1085,15 @@ function update(dt){
   }
   // zombies
   for (const z of G.zombies){
-    if (z.dead){ z.dead+=dt*2; continue; }
-    z.y += z.v*dt; z.bob += dt*6; z.angry=Math.max(0,z.angry-dt);
+    if (z.dead){ z.dead += dt; continue; }
+    z.y += z.v*dt; z.bob += dt*6; z.anim += dt; z.angry=Math.max(0,z.angry-dt);
     if (z.stage==="flash" && !z.masked && z.y > 10){
       z.flashT -= dt;
       if (z.flashT <= 0){ z.masked = true; if (G.target===z) renderTypebar(); }
     }
     if (z.y > groundY()-30){ z.dead=1; loseHeart(z); if(G.target===z){G.target=null;renderTypebar();} }
   }
-  G.zombies = G.zombies.filter(z=>!z.dead || z.dead<1.6);
+  G.zombies = G.zombies.filter(z=>!z.dead || z.dead < CORPSE_TTL);
   // recall auto-target: lowest zombie (closest to the barricade)
   if (mode==="recall" && (!G.target || G.target.dead)){
     let best=null;
@@ -922,6 +1110,8 @@ function update(dt){
   // fx
   for (const p of G.parts){ p.t-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=300*dt; }
   G.parts = G.parts.filter(p=>p.t>0);
+  for (const f of G.fx){ f.t += dt; f.x += (f.vx||0)*dt; f.y += (f.vy||0)*dt; }
+  G.fx = G.fx.filter(f => f.t < f.life);
   for (const f of G.floats){ f.t-=dt*.8; f.y-=30*dt; }
   G.floats = G.floats.filter(f=>f.t>0);
   shakeT = Math.max(0, shakeT-dt);
@@ -941,6 +1131,7 @@ function draw(t){
   // graveyard field lines
   ctx.strokeStyle="rgba(142,224,74,.06)"; ctx.lineWidth=1;
   for(let i=1;i<7;i++){ const x=i*(W/7); ctx.beginPath(); ctx.moveTo(x,60); ctx.lineTo(x,gy); ctx.stroke(); }
+  drawProps(gy);
   // dirt strip + barricade + couple at the bottom
   ctx.fillStyle="#11170c"; ctx.fillRect(-20,gy,W+40,H-gy);
   ctx.save(); ctx.translate(W/2,gy);
@@ -964,6 +1155,16 @@ function draw(t){
   for (const p of G.parts){ ctx.globalAlpha=Math.max(p.t,0); ctx.fillStyle=p.col;
     ctx.fillRect(p.x-2,p.y-2,4,4); }
   ctx.globalAlpha=1;
+  // image fx (muzzle flashes, sparks, explosions, smoke)
+  for (const f of G.fx){
+    const k = f.t/f.life, sc = f.s0 + (f.s1-f.s0)*k;
+    ctx.save(); ctx.globalAlpha = Math.max(0, 1-k);
+    if (f.add) ctx.globalCompositeOperation = "lighter";
+    ctx.translate(f.x, f.y); ctx.rotate(f.rot);
+    const w = f.img.width*sc, h = f.img.height*sc;
+    ctx.drawImage(f.img, -w/2, -h/2, w, h);
+    ctx.restore();
+  }
   // floats
   for (const f of G.floats){ ctx.globalAlpha=Math.min(f.t*2,1);
     ctx.font="800 "+f.size+"px "+"ui-monospace,Menlo,monospace";
@@ -975,12 +1176,37 @@ function drawZombie(z,t){
   const sway = Math.sin(z.bob)*4;
   const size = z.boss?64:38;
   ctx.save(); ctx.translate(z.x, z.y);
-  if (z.dead){ ctx.globalAlpha=Math.max(1-(z.dead-1)/.6,0);
-    ctx.font=(size*.8)+"px serif"; ctx.textAlign="center"; ctx.fillText("💀",0,0);
-    ctx.restore(); return; }
+  const sheet = ASSET.ok ? (z.boss ? null : ASSET.img[z.skin]) : null;
+  if (z.dead){
+    ctx.globalAlpha = corpseAlpha(z.dead);
+    if (sheet){                      // corpse: sprite tipped on its side, slow fade
+      ctx.rotate(Math.PI/2);
+      const w=44, h=58;
+      ctx.drawImage(sheet, 48, 0, 48, 64, -w/2, -h+8, w, h);
+    } else if (ASSET.ok && z.boss){
+      ctx.rotate(Math.PI);
+      const bi = ASSET.img.boss0, bw=100, bh=bw*(bi.height/bi.width);
+      ctx.drawImage(bi, -bw/2, -bh/2, bw, bh);
+    } else {
+      ctx.font=(size*.8)+"px serif"; ctx.textAlign="center"; ctx.fillText("💀",0,0);
+    }
+    ctx.restore(); return;
+  }
   if (z.angry>0){ ctx.shadowColor="#e5484d"; ctx.shadowBlur=18; }
-  ctx.font=size+"px serif"; ctx.textAlign="center";
-  ctx.fillText(z.emo,sway,0);
+  if (sheet){                        // south-facing walk cycle
+    const fr = walkFrame(z.anim, 5 + z.v*0.05);
+    const w=44, h=58;
+    ctx.drawImage(sheet, fr*48, 0, 48, 64, sway*0.5 - w/2, -h+6, w, h);
+  } else if (ASSET.ok && z.boss){
+    const bi = ASSET.img["boss"+bossFrame(z.anim, 5)];
+    if (bi){ ctx.save(); ctx.rotate(Math.PI/2 + Math.sin(z.bob)*0.08);
+      const bw=104, bh=bw*(bi.height/bi.width);
+      ctx.drawImage(bi, -bw/2, -bh/2, bw, bh); ctx.restore(); }
+    else { ctx.font=size+"px serif"; ctx.textAlign="center"; ctx.fillText(z.emo,sway,0); }
+  } else {
+    ctx.font=size+"px serif"; ctx.textAlign="center";
+    ctx.fillText(z.emo,sway,0);
+  }
   ctx.shadowBlur=0;
   const isT = G.target===z;
   // word pill
@@ -1052,7 +1278,7 @@ function roundRect(x,y,w,h,r){ ctx.beginPath();
 
 /* ---------- screens ---------- */
 function show(id){ hideAll(); $(id).classList.remove("hidden"); }
-function hideAll(){ for (const id of ["menu","stats","pause","over","iosguide","introcard"]) $(id).classList.add("hidden"); }
+function hideAll(){ for (const id of ["menu","stats","pause","over","iosguide","introcard","credits"]) $(id).classList.add("hidden"); }
 function unhideIntro(){ if (G.intro){ $("introcard").classList.remove("hidden"); renderIntro(); } }
 
 function renderProfiles(){
@@ -1111,6 +1337,8 @@ $("startbtn").onclick=()=>{
 };
 $("pausebtn").onclick=()=>{ if (state==="play"){ state="pause"; show("pause"); } };
 $("statsbtn").onclick=()=>{ renderStats(); show("stats"); };
+$("creditsbtn").onclick=()=>show("credits");
+$("creditsback").onclick=()=>show("menu");
 $("statsback").onclick=()=>show("menu");
 $("resumebtn").onclick=()=>{ hideAll(); state="play"; unhideIntro(); last=0; loop(); nkiFocus(); };
 $("quitbtn").onclick=()=>{ state="over"; gameOver(); };
